@@ -1,9 +1,9 @@
 require 'spec_helper'
-require 'controltower'
+require 'api_sdk'
 
-RSpec.describe ControlTower::Dataset do
+RSpec.describe APISdk::Dataset do
   it "is not valid when empty" do
-    dataset = ControlTower::Dataset.new
+    dataset = APISdk::Dataset.new
     expect(dataset).to_not be_valid
   end
 end
