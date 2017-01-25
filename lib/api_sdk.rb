@@ -66,7 +66,7 @@ module APISdk
 
     # Reset the dataset to its initial state
     def rollback!
-      clear_changes_information
+      restore_attributes
     end
 
     # Get a dataset from the API
