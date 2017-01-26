@@ -1,21 +1,9 @@
 # TODO: extract the symbolize keys to a function
-
 require 'active_record'
 require 'net/http'
 require 'json'
 require 'faraday'
-
-class Class
-  # Custom accessor with support for dirty objects
-  def changeable_attr_accessor(*args)
-    args.each do |arg|
-      # getter
-      self.class_eval("def #{arg};@#{arg};end")
-      # setter
-      self.class_eval("def #{arg}=(val);#{arg}_will_change! unless val==@#{arg};@#{arg}=val;end")
-    end
-  end
-end
+require 'api_sdk/dataset_service'
 
 module APISdk
   class Dataset
@@ -26,7 +14,10 @@ module APISdk
     # Provides support for define_model_callbacks
     # to change persisted state on update, etc.
     extend ActiveModel::Callbacks
-
+    # to_key, to_param
+    include ActiveModel::Conversion
+    
+    
     # Class variables: supported connectors and providers
     @@connector_types     = %w(document json rest)
     @@connector_providers = %w(csv rwjson cartodb featureservice)
@@ -68,21 +59,53 @@ module APISdk
     def rollback!
       restore_attributes
     end
-    
+
+    # Create a dataset
+    # :name, :connector_type, :provider, :connector_url, :application
+    def create
+      if
+        self.id != nil 
+      then
+        puts "Object not created"
+        return self
+      else
+        response = DatasetService.create({
+                                           name: self.name,
+                                           connector_type: self.connector_type,
+                                           provider: self.provider,
+                                           connector_url: self.connector_url,
+                                           application: self.application
+                                        })
+        data = response[:dataset_parameters]
+
+        puts "DATA: #{data}"
+
+        self.id             = data[:id]
+        self.name           = data[:attributes]["name"]
+        self.connector_type = data[:attributes]["connectorType"]
+        self.provider       = data[:attributes]["provider"]
+        self.connector_url  = data[:attributes]["connectorUrl"]
+        self.application    = data[:attributes]["application"]
+        self.persisted      = true
+        clear_changes_information
+        return self
+      end
+    end
+
     # Get a dataset from the API
     def self.find(dataset_id)
-      response = DatasetService.fetch(dataset_id)
+      response = DatasetService.read(dataset_id)
       if response[:status] == 200 then
         # API always returns in camelCase, doesn't it?
         data = response[:dataset_parameters]
         dataset = Dataset.new(
-                              id: data[:id].freeze,
-                              name: data[:attributes]["name"],
-                              connector_type: data[:attributes]["connectorType"],
-                              provider: data[:attributes]["provider"],
-                              connector_url: data[:attributes]["connectorUrl"],
-                              application: data[:attributes]["application"]
-                             )          
+          id: data[:id].freeze,
+          name: data[:attributes]["name"],
+          connector_type: data[:attributes]["connectorType"],
+          provider: data[:attributes]["provider"],
+          connector_url: data[:attributes]["connectorUrl"],
+          application: data[:attributes]["application"]
+        )          
         dataset.persisted = true
         return dataset
       else
@@ -92,27 +115,28 @@ module APISdk
     end
 
     def update
+      # This should update FROm the values in the db too
       changes = self.changes.symbolize_keys
       params = changes.map {|key, val| {key => val.last}}.reduce(:merge)
-      result = DatasetService.update(self.id, params)
-      if result[:status] == 200 then
+      response = DatasetService.update(self.id, params)
+      if response[:status] == 200 then
         self.persisted = true
         clear_changes_information
-        return result
+        return response
       else
-        puts(result[:status])
+        puts(response[:status])
         return nil
       end
     end
 
     def delete
-      result = DatasetService.destroy(self.id)
+      response = DatasetService.delete(self.id)
       if
-        result[:status] == 200
+        response[:status] == 200
       then
         return self.freeze
       else
-        puts "Dataset not deleted: #{result}"
+        puts "Dataset not deleted: #{response}"
         return self
       end
     end
@@ -139,68 +163,5 @@ module APISdk
 
   end
 
-  class DatasetService
-    # For now targeting my dev server
-    #@conn ||= Faraday.new(:url => ENV.fetch("API_URL")) do |faraday|
-    @conn ||= Faraday.new(:url => "http://mymachine:9000") do |faraday|
-      faraday.response :logger
-      faraday.adapter  Faraday.default_adapter
-      end
 
-    def self.destroy(dataset_id)
-      request = @conn.delete do |req|
-        req.url "/dataset/#{dataset_id}"
-        req.headers['Content-Type'] = 'application/json'
-      end
-      if request.status == 200
-        result = JSON.parse request.body
-        puts(result)
-        # Poor man's symbolize_keys!
-        return {status: request.status, dataset_parameters: result}
-      else
-        return {status: request.status, dataset_parameters: nil}
-      end
-    end
-
-    def self.fetch(dataset_id)
-      request = @conn.get do |req|
-        req.url "/dataset/#{dataset_id}"
-        req.headers['Content-Type'] = 'application/json'
-      end
-      if request.status == 200
-        result = JSON.parse request.body
-        data = result["data"]
-        puts(data)
-        # Poor man's symbolize_keys!
-        data.keys.each do |key|
-          data[(key.to_sym rescue key) || key] = data.delete(key)
-        end
-        return {status: request.status, dataset_parameters: data}
-      else
-        return {status: request.status, dataset_parameters: nil}
-      end
-    end
-
-    def self.update(dataset_id, params)
-      request = @conn.put do |req|
-        req.url "/dataset/#{dataset_id}"
-        req.headers['Content-Type'] = 'application/json'
-        req.body = params.to_json
-      end
-        if request.status == 200
-        result = JSON.parse request.body
-        data = result["data"]
-        puts("DATA: #{data}")
-        # Poor man's symbolize_keys!
-        data.keys.each do |key|
-          data[(key.to_sym rescue key) || key] = data.delete(key)
-        end
-        puts("SYMBOLIZED DATA: #{data}")
-        # API always returns in camelCase, doesn't it?
-        return {status: request.status, dataset: data}
-      else
-        return {status: request.status, dataset: nil}
-      end
-    end    
-  end
 end
