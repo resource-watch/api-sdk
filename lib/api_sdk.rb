@@ -93,12 +93,12 @@ module APISdk
         puts "DATA: #{data}"
 
         @id                 = data[:id]
+        @persisted          = true
         self.name           = data[:attributes]["name"]
         self.connector_type = data[:attributes]["connectorType"]
         self.provider       = data[:attributes]["provider"]
         self.connector_url  = data[:attributes]["connectorUrl"]
         self.application    = data[:attributes]["application"]
-        self.persisted      = true
         clear_changes_information
         return self
       end
@@ -111,13 +111,13 @@ module APISdk
         # API always returns in camelCase, doesn't it?
         data = response[:dataset_parameters]
         dataset = Dataset.new(
-          id: data[:id].freeze,
           name: data[:attributes]["name"],
           connector_type: data[:attributes]["connectorType"],
           provider: data[:attributes]["provider"],
           connector_url: data[:attributes]["connectorUrl"],
           application: data[:attributes]["application"]
-        )          
+        )
+        
         dataset.persisted = true
         return dataset
       else
