@@ -1,6 +1,6 @@
 Gem::Specification.new do |s|
   s.name        = 'api_sdk'
-  s.version     = '0.0.151'
+  s.version     = '0.0.153'
   s.licenses    = ['MIT']
   s.summary     = "Interfaces a ruby applications to the Resource Watch api"
   s.description = "Not yet"

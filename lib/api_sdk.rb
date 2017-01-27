@@ -18,6 +18,9 @@ module APISdk
     include ActiveModel::Conversion
     # AttributeMethods adds support for my_dataset.attributes
     include ActiveModel::AttributeMethods
+    # Serializations allow us to convert the object to serializable hashes:
+    # a = APISdk::Dataset.new(...); a.serializable_hash
+    include ActiveModel::Serialization
     
     
     # Class variables: supported connectors and providers
