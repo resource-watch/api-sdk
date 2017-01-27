@@ -16,6 +16,8 @@ module APISdk
     extend ActiveModel::Callbacks
     # to_key, to_param
     include ActiveModel::Conversion
+    # AttributeMethods adds support for my_dataset.attributes
+    include ActiveModel::AttributeMethods
     
     
     # Class variables: supported connectors and providers
@@ -25,8 +27,8 @@ module APISdk
     # Accessors
     define_attribute_methods :name, :connector_type, :provider, :connector_url, :application
     changeable_attr_accessor :name, :connector_type, :provider, :connector_url, :application
-    attr_accessor            :persisted, :id
-
+    attr_accessor            :persisted
+    attr_reader              :id
     # Validations: TODO
     # The validation for application: can it be an empty array?
     validates :name,           presence: true
@@ -50,9 +52,19 @@ module APISdk
     def attributes=(data)
     end
 
+    def attributes
+      {
+        name: @name,
+        connector_type: @connector_type,
+        provider: @provider,
+        connector_url: @connector_url,
+        application: @application        
+      }
+    end
+
     # An object is persisted in the database if it's got an ID and is clean
     def persisted?
-      @persisted ? @id && !self.changed? : nil
+      @persisted ? self.id && !self.changed? : nil
     end
 
     # Reset the dataset to its initial state
@@ -80,7 +92,7 @@ module APISdk
 
         puts "DATA: #{data}"
 
-        self.id             = data[:id]
+        @id                 = data[:id]
         self.name           = data[:attributes]["name"]
         self.connector_type = data[:attributes]["connectorType"]
         self.provider       = data[:attributes]["provider"]
