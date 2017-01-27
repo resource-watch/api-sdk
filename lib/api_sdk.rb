@@ -21,6 +21,8 @@ module APISdk
     # Serializations allow us to convert the object to serializable hashes:
     # a = APISdk::Dataset.new(...); a.serializable_hash
     include ActiveModel::Serialization
+    # to_json and as_json methodsOB
+    include ActiveModel::Serializers::JSON
     
     
     # Class variables: supported connectors and providers
