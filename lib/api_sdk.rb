@@ -3,6 +3,7 @@ require 'active_record'
 require 'net/http'
 require 'json'
 require 'faraday'
+require 'httparty'
 require 'api_sdk/dataset_service'
 
 module APISdk
@@ -24,13 +25,12 @@ module APISdk
     # to_json and as_json methodsOB
     include ActiveModel::Serializers::JSON
     
-    
     # Class variables: supported connectors and providers
     @@connector_types     = %w(document json rest)
     @@connector_providers = %w(csv rwjson cartodb featureservice)
 
     # Accessors
-    define_attribute_methods :token, :name, :connector_type, :provider, :connector_url, :application
+    define_attribute_methods :name, :connector_type, :provider, :connector_url, :application, :token 
     changeable_attr_accessor :name, :connector_type, :provider, :connector_url, :application
     attr_accessor            :persisted, :token, :id, :user_token
     
@@ -77,98 +77,85 @@ module APISdk
       restore_attributes
     end
 
-    # Create a dataset
+    # def changed_attributes
+    #   if self.changed?
+    #     return self.changes.map{|k,v| {k =>  v.last}}.reduce(:merge)
+    #   else
+    #     return {}
+    #   end
+    # end
+    
+    # Registers a dataset
     # :name, :connector_type, :provider, :connector_url, :application
     def create
-      if
-        self.id != nil 
-      then
-        puts "Object not created"
-        return self
-      else
-        response = DatasetService.create({
-                                           name: self.name,
-                                           connector_type: self.connector_type,
-                                           provider: self.provider,
-                                           connector_url: self.connector_url,
-                                           application: self.application
-                                        })
-        data = response[:dataset_parameters]
-
-        puts "DATA: #{data}"
-
-        @id                 = data[:id]
-        @persisted          = true
-        self.name           = data[:attributes]["name"]
-        self.connector_type = data[:attributes]["connectorType"]
-        self.provider       = data[:attributes]["provider"]
-        self.connector_url  = data[:attributes]["connectorUrl"]
-        self.application    = data[:attributes]["application"]
-        clear_changes_information
-        return self
-      end
+      response = DatasetService.create({
+                                         name: self.name,
+                                         connector_type: self.connector_type,
+                                         provider: self.provider,
+                                         connector_url: self.connector_url,
+                                         application: self.application
+                                       },
+                                       self.token
+                                      )
+      puts "RESPONSE: #{response}"
+      @id = response["data"]["id"]
+      self.name           = response["data"]["attributes"]["name"]
+      self.connector_type = response["data"]["attributes"]["connectorType"]
+      self.provider       = response["data"]["attributes"]["provider"]
+      self.connector_url  = response["data"]["attributes"]["connectorUrl"]
+      self.application    = response["data"]["attributes"]["application"]
+      @persisted          = true
+      clear_changes_information
+      return self        
     end
 
+    
     # Get a dataset from the API
     def self.find(dataset_id)
       response = DatasetService.read(dataset_id)
-      if response[:status] == 200 then
-        # API always returns in camelCase, doesn't it?
-        data = response[:dataset_parameters]
-        puts("DATA: #{data}")
-        dataset = Dataset.new(
-          name: data[:attributes]["name"],
-          connector_type: data[:attributes]["connectorType"],
-          provider: data[:attributes]["provider"],
-          connector_url: data[:attributes]["connectorUrl"],
-          application: data[:attributes]["application"],
-          id: data[:id]
-        )
-        
-        dataset.persisted = true
-        return dataset
-      else
-        puts(response[:status])
-        return nil        
-      end
-    end
+      puts "RESPONSE: #{response}"
+      dataset = Dataset.new(
+        name:           response["data"]["attributes"]["name"],
+        connector_type: response["data"]["attributes"]["connectorType"],
+        provider:       response["data"]["attributes"]["provider"],
+        connector_url:  response["data"]["attributes"]["connectorUrl"],
+        application:    response["data"]["attributes"]["application"]
+      )
 
+      dataset.id = response["data"]["id"]
+      dataset.persisted = true
+      return dataset
+    end
+    
     def update
-      # This should update FROm the values in the db too
-      changes = self.changes.symbolize_keys
-      params = changes.map {|key, val| {key => val.last}}.reduce(:merge)
-      response = DatasetService.update(self.id, params)
-      if response[:status] == 200 then
-        self.persisted = true
-        clear_changes_information
-        return response
-      else
-        puts(response[:status])
-        return nil
-      end
-    end
+      changed_parameters = self.changes.map{|k,v| {k =>  v.last}}.reduce(:merge)
+      response = DatasetService.update(self.id, changed_parameters, self.token)
+      puts("RESPONSE: #{response}")
 
+      @id = response["data"]["id"]
+      self.name           = response["data"]["attributes"]["name"]
+      self.connector_type = response["data"]["attributes"]["connectorType"]
+      self.provider       = response["data"]["attributes"]["provider"]
+      self.connector_url  = response["data"]["attributes"]["connectorUrl"]
+      self.application    = response["data"]["attributes"]["application"]
+      @persisted          = true
+      clear_changes_information
+      return self        
+    end
+    
     def delete
-      response = DatasetService.delete(self.id)
-      if
-        response[:status] == 200
-      then
-        return self.freeze
-      else
-        puts "Dataset not deleted: #{response}"
-        return self
-      end
+      response = DatasetService.delete(self.id, self.token)
+      return self.freeze
     end
-
+    
     def destroy
       # Not implemented - calls on_destroy callbacks
       nil
     end
-
     
     # Validations must be private
     private
-
+    
     # ID shouln't be something the user changes
     define_attribute_methods :id
     
@@ -179,8 +166,6 @@ module APISdk
         @errors.add(:application, :array, message: "must be an array of strings")
       end
     end
-
+    
   end
-
-
 end

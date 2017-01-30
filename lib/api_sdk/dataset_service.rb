@@ -15,93 +15,85 @@ end
 
 module APISdk
   class DatasetService
-    # For now targeting my dev server
-    #@conn ||= Faraday.new(:url => ENV.fetch("API_URL")) do |faraday|
+    # gfw_url will appropriately pull from ENV
+    @@gfw_url     = "http://staging-api.globalforestwatch.org"
+    @@dataset_url = "#{@@gfw_url}/dataset"
+    
+    # FARADAY. TO BE REMOVED.
     @conn ||= Faraday.new(:url => "http://staging-api.globalforestwatch.org") do |faraday|
       faraday.response :logger
       faraday.adapter  Faraday.default_adapter
     end
 
-    def self.create(params)
-      puts "PARAMS: #{}"
-      request = @conn.post do |req|
-        req.url "/dataset/"
-        req.headers['Content-Type'] = 'application/json'
-        req.body = params.to_json
-      end
-      if request.status == 201
-        result = JSON.parse request.body
-        data = result["data"]
-        # Poor man's symbolize_keys!
-        data.keys.each do |key|
-          data[(key.to_sym rescue key) || key] = data.delete(key)
-        end
-        return {status: request.status, dataset_parameters: data}
-      else
-        return {status: request.status, dataset_parameters: nil}
-      end
-      
+    def self.create(params, token)
+      puts "PARAMS: #{params}"
+      puts "TOKEN: #{token}"
+      request = HTTParty.post(
+        @@dataset_url,
+        :headers => {"Authorization" => "Bearer #{token}"},
+        :query => {
+          "dataset" => {
+            "name"          => params[:name],
+            "connectorType" => params[:connector_type],
+            "provider"      => params[:provider],
+            "application"   => params[:application],
+            "connectorUrl"  => params[:connector_url]
+          }
+        }
+      )
+      puts ("REQUEST: #{request}")
+      return request
+    end
+
+    def self.read(dataset_id)
+      request = HTTParty.get(
+        "#{@@dataset_url}/#{dataset_id}"
+      )
+      puts("REQUEST: #{request}")
+      return request
+    end
+
+
+    def self.update(dataset_id, params, token)
+      puts "PARAMS: #{params}"
+      puts "TOKEN: #{token}"
+      request = HTTParty.put(
+        "#{@@dataset_url}/#{dataset_id}",
+        :headers => {"Authorization" => "Bearer #{token}"},
+        :query => { "dataset" => params }
+      )
+      puts ("REQUEST: #{request}")
+      return request
+    end
+
+    def self.delete(dataset_id, token)
+      puts "TOKEN: #{token}"
+      request = HTTParty.delete(
+        "#{@@dataset_url}/#{dataset_id}",
+        :headers => {"Authorization" => "Bearer #{token}"}
+      )
+      puts ("REQUEST: #{request}")
+      return request
     end
     
-    def self.read(dataset_id)
-      request = @conn.get do |req|
-        req.url "/dataset/#{dataset_id}"
-        req.headers['Content-Type'] = 'application/json'
-      end
-      if request.status == 200
-        result = JSON.parse request.body
-        data = result["data"]
-        puts(data)
-        # Poor man's symbolize_keys!
-        data.keys.each do |key|
-          data[(key.to_sym rescue key) || key] = data.delete(key)
-        end
-        return {status: request.status, dataset_parameters: data}
-      else
-        return {status: request.status, dataset_parameters: nil}
-      end
-    end
-
-    def self.update(dataset_id, params)
-      request = @conn.put do |req|
-        req.url "/dataset/#{dataset_id}"
-        req.headers['Content-Type'] = 'application/json'
-        req.body = params.to_json
-      end
-      if request.status == 200
-        result = JSON.parse request.body
-        data = result["data"]
-        puts("DATA: #{data}")
-        # Poor man's symbolize_keys!
-        data.keys.each do |key|
-          data[(key.to_sym rescue key) || key] = data.delete(key)
-        end
-        puts("SYMBOLIZED DATA: #{data}")
-        # API always returns in camelCase, doesn't it?
-        return {status: request.status, dataset: data}
-      else
-        return {status: request.status, dataset: nil}
-      end
-    end
-
-    def self.delete(dataset_id)
-      request = @conn.delete do |req|
-        req.url "/dataset/#{dataset_id}"
-        req.headers['Content-Type'] = 'application/json'
-      end
-      if request.status == 200
-        result = JSON.parse request.body
-        puts(result)
-        # Poor man's symbolize_keys!
-        return {status: request.status, dataset_parameters: result}
-      else
-        return {status: request.status, dataset_parameters: nil}
-      end
-    end
+    # def self.delete(dataset_id, token)
+    #   request = @conn.delete do |req|
+    #     req.url "/dataset/#{dataset_id}"
+    #     req.headers['Content-Type'] = 'application/json'
+    #     req.headers['Authorization'] = "Bearer #{token}"
+    #   end
+    #   if request.status == 200
+    #     result = JSON.parse request.body
+    #     puts(result)
+    #     # Poor man's symbolize_keys!
+    #     return {status: request.status, dataset_parameters: result}
+    #   else
+    #     return {status: request.status, dataset_parameters: nil}
+    #   end
+    # end
 
     def self.check_logged(dataset)
-      token = dataset.user_token
-
+      token = dataset.token
       request = @conn.get do |req|
         req.url "/auth/check-logged"
         req.headers['Content-Type'] = 'application/json'
@@ -110,5 +102,15 @@ module APISdk
       puts("HEADERS: #{request.headers}")
       puts("BODY: #{request.body}")
     end
+
+    def self.check_logged_without_token(dataset)
+      request = @conn.get do |req|
+        req.url "/auth/check-logged"
+        req.headers['Content-Type'] = 'application/json'
+      end
+      puts("HEADERS: #{request.headers}")
+      puts("BODY: #{request.body}")
+    end
+
   end
 end

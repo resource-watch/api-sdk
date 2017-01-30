@@ -1,6 +1,6 @@
 Gem::Specification.new do |s|
   s.name        = 'api_sdk'
-  s.version     = '0.0.171'
+  s.version     = '0.0.211'
   s.licenses    = ['MIT']
   s.summary     = "Interfaces a ruby applications to the Resource Watch api"
   s.description = "Not yet"
@@ -11,4 +11,5 @@ Gem::Specification.new do |s|
   s.add_runtime_dependency "activemodel"
   s.add_runtime_dependency "activerecord"
   s.add_runtime_dependency "faraday"
+  s.add_runtime_dependency "httparty"
 end
