@@ -17,7 +17,7 @@ module APISdk
   class DatasetService
     # For now targeting my dev server
     #@conn ||= Faraday.new(:url => ENV.fetch("API_URL")) do |faraday|
-    @conn ||= Faraday.new(:url => "http://mymachine:9000") do |faraday|
+    @conn ||= Faraday.new(:url => "http://staging-api.globalforestwatch.org") do |faraday|
       faraday.response :logger
       faraday.adapter  Faraday.default_adapter
     end
@@ -97,6 +97,18 @@ module APISdk
       else
         return {status: request.status, dataset_parameters: nil}
       end
+    end
+
+    def self.check_logged(dataset)
+      token = dataset.user_token
+
+      request = @conn.get do |req|
+        req.url "/auth/check-logged"
+        req.headers['Content-Type'] = 'application/json'
+        req.headers['Authorization'] = "Bearer #{token}"
+      end
+      puts("HEADERS: #{request.headers}")
+      puts("BODY: #{request.body}")
     end
   end
 end

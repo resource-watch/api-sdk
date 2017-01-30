@@ -30,10 +30,10 @@ module APISdk
     @@connector_providers = %w(csv rwjson cartodb featureservice)
 
     # Accessors
-    define_attribute_methods :name, :connector_type, :provider, :connector_url, :application
+    define_attribute_methods :token, :name, :connector_type, :provider, :connector_url, :application
     changeable_attr_accessor :name, :connector_type, :provider, :connector_url, :application
-    attr_accessor            :persisted
-    attr_reader              :id
+    attr_accessor            :persisted, :token, :id, :user_token
+    
     # Validations: TODO
     # The validation for application: can it be an empty array?
     validates :name,           presence: true
@@ -115,12 +115,14 @@ module APISdk
       if response[:status] == 200 then
         # API always returns in camelCase, doesn't it?
         data = response[:dataset_parameters]
+        puts("DATA: #{data}")
         dataset = Dataset.new(
           name: data[:attributes]["name"],
           connector_type: data[:attributes]["connectorType"],
           provider: data[:attributes]["provider"],
           connector_url: data[:attributes]["connectorUrl"],
-          application: data[:attributes]["application"]
+          application: data[:attributes]["application"],
+          id: data[:id]
         )
         
         dataset.persisted = true
