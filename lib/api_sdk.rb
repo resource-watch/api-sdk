@@ -2,7 +2,6 @@
 require 'active_record'
 require 'net/http'
 require 'json'
-require 'faraday'
 require 'httparty'
 require 'api_sdk/dataset_service'
 
