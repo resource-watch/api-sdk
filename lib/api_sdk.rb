@@ -29,8 +29,13 @@ module APISdk
     @@connector_providers = %w(csv rwjson cartodb featureservice)
 
     # Accessors
-    define_attribute_methods :name, :connector_type, :provider, :connector_url, :application, :token 
-    changeable_attr_accessor :name, :connector_type, :provider, :connector_url, :application
+    define_attribute_methods :name, :connector_type, :provider,
+                             :connector_url, :application, :subtitle,
+                             :token, :data_path
+    
+    changeable_attr_accessor :name, :connector_type, :provider, :connector_url,
+                             :application, :subtitle, :data_path
+    
     attr_accessor            :persisted, :token, :id, :user_token
     
     # Validations: TODO
@@ -39,6 +44,7 @@ module APISdk
     validates :connector_type, presence: true
     validates :connector_type, :inclusion => { :in => @@connector_types }
     validates :application,    presence: true
+    validate  :validate_fields
     validate  :validate_application
 
     # Called on Dataset.new
@@ -48,21 +54,26 @@ module APISdk
       self.attributes = data unless data == {}
       # A new object is not persisted by default
       @persisted = false
+
+      # And we reset the changes tracking
       clear_changes_information
     end
 
+    # Strange, but necessary for Rails.
     # This enables the declaration of datasets with a hash of symbols,
     # like ControlTower::Dataset.new(name: "The name", ... )
     def attributes=(data)
     end
 
+    # 
     def attributes
       {
         name: @name,
         connector_type: @connector_type,
         provider: @provider,
         connector_url: @connector_url,
-        application: @application        
+        application: @application,
+        subtitle: @subtitle
       }
     end
 
@@ -165,6 +176,9 @@ module APISdk
         @errors.add(:application, :array, message: "must be an array of strings")
       end
     end
-    
+
+    def validate_fields
+      
+    end    
   end
 end
