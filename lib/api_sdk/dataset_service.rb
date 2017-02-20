@@ -1,18 +1,3 @@
-# Declaring the changeable_attr_accessor for later
-# Must move from here to its own file
-class Class
-  # Custom accessor with support for dirty objects
-  def changeable_attr_accessor(*args)
-    args.each do |arg|
-      # getter
-      self.class_eval("def #{arg};@#{arg};end")
-      # setter
-      self.class_eval("def #{arg}=(val);#{arg}_will_change! unless val==@#{arg};@#{arg}=val;end")
-    end
-  end
-end
-
-
 module APISdk
   class DatasetService
     # gfw_url will appropriately pull from ENV
@@ -25,13 +10,14 @@ module APISdk
       request = HTTParty.post(
         @@dataset_url,
         :headers => {"Authorization" => "Bearer #{token}"},
-        :query => {
+        :body => {
           "dataset" => {
             "name"          => params[:name],
             "connectorType" => params[:connector_type],
             "provider"      => params[:provider],
             "application"   => params[:application],
-            "connectorUrl"  => params[:connector_url]
+            "connectorUrl"  => params[:connector_url],
+            "legend"        => params[:legend]
           }
         }
       )
@@ -54,7 +40,7 @@ module APISdk
       request = HTTParty.put(
         "#{@@dataset_url}/#{dataset_id}",
         :headers => {"Authorization" => "Bearer #{token}"},
-        :query => { "dataset" => params }
+        :body => { "dataset" => params }
       )
       puts ("REQUEST: #{request}")
       return request

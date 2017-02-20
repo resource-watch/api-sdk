@@ -1,26 +1,39 @@
+# coding: utf-8
 # TODO: extract the symbolize keys to a function
 require 'active_record'
 require 'net/http'
 require 'json'
 require 'httparty'
+require 'api_sdk/attr_changeable_methods'
 require 'api_sdk/dataset_service'
+# Needed for change-tracking in hash values
+require 'active_support/core_ext/hash'
 
 module APISdk
+  # Many years later, as he faced the firing squad, Colonel
+  # Aureliano Buendía was to remember that distant afternoon when
+  # his father took him to discover Rails.
   class Dataset
     # Introspections, conversions, translations and validations
     include ActiveModel::Model
+
     # Track dirty objects
     include ActiveModel::Dirty
+
     # Provides support for define_model_callbacks
     # to change persisted state on update, etc.
     extend ActiveModel::Callbacks
+
     # to_key, to_param
     include ActiveModel::Conversion
+
     # AttributeMethods adds support for my_dataset.attributes
     include ActiveModel::AttributeMethods
+
     # Serializations allow us to convert the object to serializable hashes:
     # a = APISdk::Dataset.new(...); a.serializable_hash
     include ActiveModel::Serialization
+
     # to_json and as_json methodsOB
     include ActiveModel::Serializers::JSON
     
@@ -28,18 +41,18 @@ module APISdk
     @@connector_types     = %w(document json rest)
     @@connector_providers = %w(csv rwjson cartodb featureservice)
 
-    # Accessors
+    # Defining attribute methods in the usual Rails way, but
+    # changeable_attr_accessor 
     define_attribute_methods :name, :connector_type, :provider,
                              :connector_url, :application, :subtitle,
-                             :token, :data_path
+                             :token, :data_path, :legend
     
     changeable_attr_accessor :name, :connector_type, :provider, :connector_url,
-                             :application, :subtitle, :data_path
+                             :application, :subtitle, :data_path, :legend
     
     attr_accessor            :persisted, :token, :id, :user_token
     
     # Validations: TODO
-    # The validation for application: can it be an empty array?
     validates :name,           presence: true
     validates :connector_type, presence: true
     validates :connector_type, :inclusion => { :in => @@connector_types }
@@ -103,7 +116,8 @@ module APISdk
                                          connector_type: self.connector_type,
                                          provider: self.provider,
                                          connector_url: self.connector_url,
-                                         application: self.application
+                                         application: self.application,
+                                         legend: self.legend
                                        },
                                        self.token
                                       )
@@ -178,7 +192,7 @@ module APISdk
     end
 
     def validate_fields
-      
+      nil
     end    
   end
 end
