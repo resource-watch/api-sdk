@@ -88,4 +88,11 @@ It will again reflect its persisted state:
 => true
 ```
 
+Add legends to csv datasets with a properly formatted object.
+
+```
+a.legend = {"lat"=>"latitude", "date"=>["ISO", "dates", "here"], "long"=>"longitude", "region"=>["regions", "here"], "country"=>["ESP"]}
+```															     
+
+
 TODO: refactoring, creating of _de novo_ datasets, destroying, adding fields

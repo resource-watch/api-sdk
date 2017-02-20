@@ -1,10 +1,21 @@
 # coding: utf-8
-# TODO: extract the symbolize keys to a function
+#
+# TODO: validations
+#
+#
+#
+# I'm trying to offer some of the Rails interface
+# for its models, so we'll need active_record
 require 'active_record'
+# Also, the usual http and json stuff
 require 'net/http'
 require 'json'
+# This gem will handle API calls
 require 'httparty'
+# And some code modularization is in order
+# Some Rails magic is required.
 require 'api_sdk/attr_changeable_methods'
+# And the actual API interfacing will be living in its own class
 require 'api_sdk/dataset_service'
 # Needed for change-tracking in hash values
 require 'active_support/core_ext/hash'
@@ -43,14 +54,34 @@ module APISdk
 
     # Defining attribute methods in the usual Rails way, but
     # changeable_attr_accessor 
-    define_attribute_methods :name, :connector_type, :provider,
-                             :connector_url, :application, :subtitle,
-                             :token, :data_path, :legend
+    define_attribute_methods :name,
+                             :connector_type,
+                             :provider,
+                             :connector_url,
+                             :application,
+                             :subtitle,
+                             :data_path,
+                             :legend,
+                             # We want to define accessors for all
+                             # dataset attributes. But also, for
+                             # some things that are not attributes.
+                             # Like the token.
+                             :token
     
-    changeable_attr_accessor :name, :connector_type, :provider, :connector_url,
-                             :application, :subtitle, :data_path, :legend
+    # But we'll only declare dataset attributes as changeable
+    changeable_attr_accessor :name,
+                             :connector_type,
+                             :provider,
+                             :connector_url,
+                             :application,
+                             :subtitle,
+                             :data_path,
+                             :legend
     
-    attr_accessor            :persisted, :token, :id, :user_token
+    # Some of the stuff is not supposed to be changed by the user.
+    attr_accessor            :persisted,
+                             :token,
+                             :id
     
     # Validations: TODO
     validates :name,           presence: true
@@ -81,12 +112,14 @@ module APISdk
     # 
     def attributes
       {
-        name: @name,
+        name:           @name,
         connector_type: @connector_type,
-        provider: @provider,
-        connector_url: @connector_url,
-        application: @application,
-        subtitle: @subtitle
+        provider:       @provider,
+        connector_url:  @connector_url,
+        application:    @application,
+        subtitle:       @subtitle,
+        data_path:      @data_path,
+        legend:         @legend
       }
     end
 
@@ -100,34 +133,33 @@ module APISdk
       restore_attributes
     end
 
-    # def changed_attributes
-    #   if self.changed?
-    #     return self.changes.map{|k,v| {k =>  v.last}}.reduce(:merge)
-    #   else
-    #     return {}
-    #   end
-    # end
-    
     # Registers a dataset
-    # :name, :connector_type, :provider, :connector_url, :application
+    # Ugly function, has to be refactored
     def create
       response = DatasetService.create({
-                                         name: self.name,
+                                         name:           self.name,
                                          connector_type: self.connector_type,
-                                         provider: self.provider,
-                                         connector_url: self.connector_url,
-                                         application: self.application,
-                                         legend: self.legend
+                                         provider:       self.provider,
+                                         connector_url:  self.connector_url,
+                                         application:    self.application,
+                                         subtitle:       self.subtitle,
+                                         data_path:      self.data_path,
+                                         legend:         self.legend
                                        },
                                        self.token
                                       )
       puts "RESPONSE: #{response}"
-      @id = response["data"]["id"]
+      @id                 = response["data"]["id"]
       self.name           = response["data"]["attributes"]["name"]
+      # Important! The RW API accepts parameters in camelcase and snakecase,
+      # but will return values in camelcase exclusively
       self.connector_type = response["data"]["attributes"]["connectorType"]
       self.provider       = response["data"]["attributes"]["provider"]
       self.connector_url  = response["data"]["attributes"]["connectorUrl"]
       self.application    = response["data"]["attributes"]["application"]
+      self.subtitle       = response["data"]["attributes"]["subtitle"]
+      self.data_path      = response["data"]["attributes"]["dataPath"]
+      self.legend         = response["data"]["attributes"]["legend"]
       @persisted          = true
       clear_changes_information
       return self        
@@ -143,7 +175,10 @@ module APISdk
         connector_type: response["data"]["attributes"]["connectorType"],
         provider:       response["data"]["attributes"]["provider"],
         connector_url:  response["data"]["attributes"]["connectorUrl"],
-        application:    response["data"]["attributes"]["application"]
+        application:    response["data"]["attributes"]["application"],
+        subtitle:       response["data"]["attributes"]["subtitle"],
+        data_path:      response["data"]["attributes"]["dataPath"],
+        legend:         response["data"]["attributes"]["legend"]
       )
 
       dataset.id = response["data"]["id"]
@@ -156,12 +191,15 @@ module APISdk
       response = DatasetService.update(self.id, changed_parameters, self.token)
       puts("RESPONSE: #{response}")
 
-      @id = response["data"]["id"]
+      @id                 = response["data"]["id"]
       self.name           = response["data"]["attributes"]["name"]
       self.connector_type = response["data"]["attributes"]["connectorType"]
       self.provider       = response["data"]["attributes"]["provider"]
       self.connector_url  = response["data"]["attributes"]["connectorUrl"]
       self.application    = response["data"]["attributes"]["application"]
+      self.subtitle       = response["data"]["attributes"]["subtitle"]
+      self.data_path      = response["data"]["attributes"]["dataPath"]
+      self.legend         = response["data"]["attributes"]["legend"]
       @persisted          = true
       clear_changes_information
       return self        
