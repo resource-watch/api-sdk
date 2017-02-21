@@ -47,13 +47,27 @@ module APISdk
 
     # to_json and as_json methodsOB
     include ActiveModel::Serializers::JSON
-    
+
     # Class variables: supported connectors and providers
     @@connector_types     = %w(document json rest)
     @@connector_providers = %w(csv rwjson cartodb featureservice)
 
+    # FIELDS:
+    #  name
+    #  connector_type
+    #  provider
+    #  connector_url
+    #  application
+    #  subtitle
+    #  data_path
+    #  legend
+    #  data
+    #  table_name
+    #  data_overwrite
+    #  vocabularies
+    #
     # Defining attribute methods in the usual Rails way, but
-    # changeable_attr_accessor 
+    # changeable_attr_accessor
     define_attribute_methods :name,
                              :connector_type,
                              :provider,
@@ -62,12 +76,16 @@ module APISdk
                              :subtitle,
                              :data_path,
                              :legend,
+                             :data,
+                             :table_name,
+                             :data_overwrite,
+                             :vocabularies,
                              # We want to define accessors for all
                              # dataset attributes. But also, for
                              # some things that are not attributes.
                              # Like the token.
                              :token
-    
+
     # But we'll only declare dataset attributes as changeable
     changeable_attr_accessor :name,
                              :connector_type,
@@ -76,13 +94,18 @@ module APISdk
                              :application,
                              :subtitle,
                              :data_path,
-                             :legend
-    
+                             :legend,
+                             :data,
+                             :table_name,
+                             :data_overwrite,
+                             :vocabularies
+
+
     # Some of the stuff is not supposed to be changed by the user.
     attr_accessor            :persisted,
                              :token,
                              :id
-    
+
     # Validations: TODO
     validates :name,           presence: true
     validates :connector_type, presence: true
@@ -90,6 +113,7 @@ module APISdk
     validates :application,    presence: true
     validate  :validate_fields
     validate  :validate_application
+    validate  :validate_data
 
     # Called on Dataset.new
     def initialize(data = {})
@@ -109,17 +133,21 @@ module APISdk
     def attributes=(data)
     end
 
-    # 
+    #
     def attributes
       {
-        name:           @name,
-        connector_type: @connector_type,
-        provider:       @provider,
-        connector_url:  @connector_url,
-        application:    @application,
-        subtitle:       @subtitle,
-        data_path:      @data_path,
-        legend:         @legend
+        name:            @name,
+        connector_type:  @connector_type,
+        provider:        @provider,
+        connector_url:   @connector_url,
+        application:     @application,
+        subtitle:        @subtitle,
+        data_path:       @data_path,
+        legend:          @legend,
+        data:            @data,
+        table_name:      @table_name,
+        data_overwrite:  @data_overwrite,
+        vocabularies:    @vocabularies
       }
     end
 
@@ -137,14 +165,18 @@ module APISdk
     # Ugly function, has to be refactored
     def create
       response = DatasetService.create({
-                                         name:           self.name,
-                                         connector_type: self.connector_type,
-                                         provider:       self.provider,
-                                         connector_url:  self.connector_url,
-                                         application:    self.application,
-                                         subtitle:       self.subtitle,
-                                         data_path:      self.data_path,
-                                         legend:         self.legend
+                                         name:            self.name,
+                                         connector_type:  self.connector_type,
+                                         provider:        self.provider,
+                                         connector_url:   self.connector_url,
+                                         application:     self.application,
+                                         subtitle:        self.subtitle,
+                                         data_path:       self.data_path,
+                                         legend:          self.legend,
+                                         data:            self.data,
+                                         table_name:      self.table_name,
+                                         data_overwrite:  self.data_overwrite,
+                                         vocabularies:    self.vocabularies
                                        },
                                        self.token
                                       )
@@ -153,19 +185,22 @@ module APISdk
       self.name           = response["data"]["attributes"]["name"]
       # Important! The RW API accepts parameters in camelcase and snakecase,
       # but will return values in camelcase exclusively
-      self.connector_type = response["data"]["attributes"]["connectorType"]
-      self.provider       = response["data"]["attributes"]["provider"]
-      self.connector_url  = response["data"]["attributes"]["connectorUrl"]
-      self.application    = response["data"]["attributes"]["application"]
-      self.subtitle       = response["data"]["attributes"]["subtitle"]
-      self.data_path      = response["data"]["attributes"]["dataPath"]
-      self.legend         = response["data"]["attributes"]["legend"]
-      @persisted          = true
+      self.connector_type     = response["data"]["attributes"]["connectorType"]
+      self.provider           = response["data"]["attributes"]["provider"]
+      self.connector_url      = response["data"]["attributes"]["connectorUrl"]
+      self.application        = response["data"]["attributes"]["application"]
+      self.subtitle           = response["data"]["attributes"]["subtitle"]
+      self.data_path          = response["data"]["attributes"]["dataPath"]
+      self.legend             = response["data"]["attributes"]["legend"]
+      self.data               = response["data"]["attributes"]["data"]
+      self.table_name         = response["data"]["attributes"]["tableName"]
+      self.data_overwrite     = response["data"]["attributes"]["dataOverwrite"]
+      self.vocabularies       = response["data"]["attributes"]["vocabularies"]
+      @persisted              = true
       clear_changes_information
-      return self        
+      return self
     end
 
-    
     # Get a dataset from the API
     def self.find(dataset_id)
       response = DatasetService.read(dataset_id)
@@ -177,15 +212,18 @@ module APISdk
         connector_url:  response["data"]["attributes"]["connectorUrl"],
         application:    response["data"]["attributes"]["application"],
         subtitle:       response["data"]["attributes"]["subtitle"],
-        data_path:      response["data"]["attributes"]["dataPath"],
-        legend:         response["data"]["attributes"]["legend"]
+        legend:         response["data"]["attributes"]["legend"],
+        data:           response["data"]["attributes"]["data"],
+        table_name:     response["data"]["attributes"]["tableName"],
+        data_overwrite: response["data"]["attributes"]["dataOverwrite"],
+        vocabularies:   response["data"]["attributes"]["vocabularies"]
       )
 
       dataset.id = response["data"]["id"]
       dataset.persisted = true
       return dataset
     end
-    
+
     def update
       changed_parameters = self.changes.map{|k,v| {k =>  v.last}}.reduce(:merge)
       response = DatasetService.update(self.id, changed_parameters, self.token)
@@ -200,30 +238,37 @@ module APISdk
       self.subtitle       = response["data"]["attributes"]["subtitle"]
       self.data_path      = response["data"]["attributes"]["dataPath"]
       self.legend         = response["data"]["attributes"]["legend"]
+      self.data           = response["data"]["attributes"]["data"]
+      self.table_name     = response["data"]["attributes"]["tableName"]
+      self.data_overwrite = response["data"]["attributes"]["dataOverwrite"]
+      self.vocabularies   = response["data"]["attributes"]["vocabularies"]
       @persisted          = true
+
       clear_changes_information
-      return self        
+      return self
     end
-    
+
     def delete
       response = DatasetService.delete(self.id, self.token)
       return self.freeze
     end
-    
+
     def destroy
       # Not implemented - calls on_destroy callbacks
       nil
     end
-    
+
     # Validations must be private
     private
-    
+
     # ID shouln't be something the user changes
     define_attribute_methods :id
-    
+
     def validate_application
       if !@application.is_a?(Array)
         @errors.add(:application, :not_an_array, message: "must be an array")
+      elsif @application == []
+        @errors.add(:application, :empty_array, message: "can't declare an empty array")
       elsif !@application.all? {|a| a.is_a? String}
         @errors.add(:application, :array, message: "must be an array of strings")
       end
@@ -231,6 +276,22 @@ module APISdk
 
     def validate_fields
       nil
-    end    
+    end
+
+    def validate_data
+      puts("Validating data")
+      if @provider == "json"
+        if (@data.present? and @connector_url.present?)
+          @errors.add(:data, :both, message: "You must declare either data or connector_url, but not both")
+        elsif !(@data.present? or @connector_url.present?)
+          @errors.add(:data, :both, message: "You must declare one of data or connector_url")
+        end
+      else
+        if !@connector_url.present?
+          @errors.add(:connector_url, :presence, "Connector url needed")
+        end
+        @data ? @errors.add(:data, :presence, "Data attribute only supported in json datasets") : nil
+      end
+    end
   end
 end
