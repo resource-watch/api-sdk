@@ -8,7 +8,7 @@
 # for its models, so we'll need active_record
 require 'active_record'
 # And also select pieces of active_support
-require 'active_support/core_ext/hash'
+require 'active_support/core_ext'
 # Also, the usual http and json stuff
 require 'net/http'
 require 'json'
@@ -115,7 +115,6 @@ module APISdk
     validates :connector_type, presence: true
     validates :connector_type, :inclusion => { :in => @@connector_types }
     validates :application,    presence: true
-    validate  :validate_fields
     validate  :validate_application
     validate  :validate_data
 
@@ -257,31 +256,38 @@ module APISdk
 
     def validate_application
       if !@application.is_a?(Array)
-        @errors.add(:application, :not_an_array, message: "must be an array")
+        @errors.add(:application, :not_an_array, message: "Application must be an array")
       elsif @application == []
-        @errors.add(:application, :empty_array, message: "can't declare an empty array")
+        @errors.add(:application, :is_empty_array, message: "Application can't be an empty array")
       elsif !@application.all? {|a| a.is_a? String}
-        @errors.add(:application, :array, message: "must be an array of strings")
+        @errors.add(:application, :not_strings_array, message: "Application must be a string array")
       end
     end
 
-    def validate_fields
-      nil
-    end
-
     def validate_data
-      puts("Validating data")
-      if @provider == "json"
-        if (@data.present? and @connector_url.present?)
-          @errors.add(:data, :both, message: "You must declare either data or connector_url, but not both")
-        elsif !(@data.present? or @connector_url.present?)
-          @errors.add(:data, :both, message: "You must declare one of data or connector_url")
-        end
+      case @provider
+      when "json"
+        (@data.nil? and @connector_url.nil?) ? @errors.add(
+          :base,
+          :neither_data_or_url,
+          message: "Needed one of data or connector_url"
+        ) : nil
+        @data and @connector_url ? @errors.add(
+              :base,
+              :both_data_and_url,
+              message: "You need only one of data or connector_url"
+            ) : nil
       else
-        if !@connector_url.present?
-          @errors.add(:connector_url, :presence, "Connector url needed")
-        end
-        @data.present? ? @errors.add(:data, :presence, "Data attribute only supported in json datasets") : nil
+        @connector_url.nil? ? @errors.add(
+          :connector_url,
+          :presence,
+          message: "Connector_url is needed"
+        ) : nil
+        @data.nil? ? nil : @errors.add(
+          :data,
+          :not_presence,
+          message: "Data attribute not supported for this provider"
+        )
       end
     end
   end

@@ -17,8 +17,14 @@ module APISdk
             "provider"      => attrs[:provider],
             "application"   => attrs[:application],
             "connectorUrl"  => attrs[:connector_url],
-            "legend"        => attrs[:legend]
-          }
+            "subtitle"      => attrs[:subtitle],
+            "dataPath"      => attrs[:data_path],
+            "legend"        => attrs[:legend],
+            "data"          => attrs[:data],
+            "tableName"     => attrs[:table_name],
+            "dataOverwrite" => attrs[:data_overwrite]
+          }.delete_if {|k, v| v.nil?} # Removes nil keys
+
         }
       )
       puts ("REQUEST: #{request}")
