@@ -290,7 +290,7 @@ module APISdk
         if !@connector_url.present?
           @errors.add(:connector_url, :presence, "Connector url needed")
         end
-        @data ? @errors.add(:data, :presence, "Data attribute only supported in json datasets") : nil
+        @data.present? ? @errors.add(:data, :presence, "Data attribute only supported in json datasets") : nil
       end
     end
   end
