@@ -4,20 +4,20 @@ module APISdk
     @@gfw_url     = "http://staging-api.globalforestwatch.org"
     @@dataset_url = "#{@@gfw_url}/dataset"
     
-    def self.create(params, token)
-      puts "PARAMS: #{params}"
+    def self.create(attrs, token)
+      puts "ATTRIBUTES: #{attrs}"
       puts "TOKEN: #{token}"
       request = HTTParty.post(
         @@dataset_url,
         :headers => {"Authorization" => "Bearer #{token}"},
         :body => {
           "dataset" => {
-            "name"          => params[:name],
-            "connectorType" => params[:connector_type],
-            "provider"      => params[:provider],
-            "application"   => params[:application],
-            "connectorUrl"  => params[:connector_url],
-            "legend"        => params[:legend]
+            "name"          => attrs[:name],
+            "connectorType" => attrs[:connector_type],
+            "provider"      => attrs[:provider],
+            "application"   => attrs[:application],
+            "connectorUrl"  => attrs[:connector_url],
+            "legend"        => attrs[:legend]
           }
         }
       )
@@ -27,7 +27,7 @@ module APISdk
 
     def self.read(dataset_id)
       request = HTTParty.get(
-        "#{@@dataset_url}/#{dataset_id}"
+        "#{@@dataset_url}/#{dataset_id}?includes=vocabulary"
       )
       puts("REQUEST: #{request}")
       return request

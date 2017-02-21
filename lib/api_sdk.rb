@@ -7,6 +7,8 @@
 # I'm trying to offer some of the Rails interface
 # for its models, so we'll need active_record
 require 'active_record'
+# And also select pieces of active_support
+require 'active_support/core_ext/hash'
 # Also, the usual http and json stuff
 require 'net/http'
 require 'json'
@@ -16,9 +18,11 @@ require 'httparty'
 # Some Rails magic is required.
 require 'api_sdk/attr_changeable_methods'
 # And the actual API interfacing will be living in its own class
+require 'api_sdk/vocabulary'
+# Needed for change-tracking in hash values
 require 'api_sdk/dataset_service'
 # Needed for change-tracking in hash values
-require 'active_support/core_ext/hash'
+
 
 module APISdk
   # Many years later, as he faced the firing squad, Colonel
@@ -164,24 +168,11 @@ module APISdk
     # Registers a dataset
     # Ugly function, has to be refactored
     def create
-      response = DatasetService.create({
-                                         name:            self.name,
-                                         connector_type:  self.connector_type,
-                                         provider:        self.provider,
-                                         connector_url:   self.connector_url,
-                                         application:     self.application,
-                                         subtitle:        self.subtitle,
-                                         data_path:       self.data_path,
-                                         legend:          self.legend,
-                                         data:            self.data,
-                                         table_name:      self.table_name,
-                                         data_overwrite:  self.data_overwrite,
-                                         vocabularies:    self.vocabularies
-                                       },
-                                       self.token
-                                      )
+      response = DatasetService.create(self.attributes, self.token)
       puts "RESPONSE: #{response}"
       @id                 = response["data"]["id"]
+      response = DatasetService.read(@id)
+      puts "NEW RESPONSE: #{response}"
       self.name           = response["data"]["attributes"]["name"]
       # Important! The RW API accepts parameters in camelcase and snakecase,
       # but will return values in camelcase exclusively
@@ -195,7 +186,7 @@ module APISdk
       self.data               = response["data"]["attributes"]["data"]
       self.table_name         = response["data"]["attributes"]["tableName"]
       self.data_overwrite     = response["data"]["attributes"]["dataOverwrite"]
-      self.vocabularies       = response["data"]["attributes"]["vocabularies"]
+      self.vocabularies       = response["data"]["attributes"]["vocabulary"]
       @persisted              = true
       clear_changes_information
       return self
