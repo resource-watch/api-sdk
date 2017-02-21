@@ -93,6 +93,26 @@ Add legends to csv datasets with a properly formatted object.
 ```
 a.legend = {"lat"=>"latitude", "date"=>["ISO", "dates", "here"], "long"=>"longitude", "region"=>["regions", "here"], "country"=>["ESP"]}
 ```															     
+Create a /de novo/ dataset:
+
+```
+a = APISdk::Dataset.new(
+  :name           => "Example dataset",
+  :connector_type => "document",
+  :provider       => "csv",
+  :application    => ["rw"],
+  :connector_url  => "",
+  :subtitle       => "subtitulo",
+  :legend         => {
+    "lat"           => "latitude",
+    "long"          => "longitude"
+  }
+)
+
+a.token = "A proper CT API JWT"
+a.create
+```
+
 
 
 TODO: refactoring, creating of _de novo_ datasets, destroying, adding fields
