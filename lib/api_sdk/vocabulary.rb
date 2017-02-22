@@ -12,9 +12,23 @@ module APISdk
                              :tags
 
     changeable_attr_accessor :name,
-                             :tags
+                             :tags,
+                             :description,
+                             :source,
+                             :source_url,
+                             :authors,
+                             :query_url,
+                             :widget_config,
+                             :templete,
+                             :default,
+                             :published,
+                             :verified
 
+    attr_accessor            :id,
+                             :dataset
+    
     validates :name, presence: true
+    validate :validate_tags
 
 
     def initialize(data = {})
@@ -45,11 +59,41 @@ module APISdk
     def rollback!
       restore_attributes
     end
+
+    def self.find(vocabulary_id)
+    end
+
+    private
+
+    def validate_tags
+      if @tags.nil?
+        @errors.add(:tags, :nil, message: "Tags can't be nil")
+      elsif !@tags.is_a?(Array)
+        @errors.add(:tags, :not_an_array, message: "Tags must be an array")
+      elsif @tags == []
+        @errors.add(:tags, :is_empty_array, message: "Tags can't be an empty array")
+      elsif !@tags.all? {|el| el.is_a? String}
+        @errors.add(:tags, :not_strings_array, message: "Tags must be a string array")
+      end
+    end
   end
 
   class VocabularyService
-    def create
-      nil
+    @@gfw_url     = "http://staging-api.globalforestwatch.org"
+    @@vocabulary_url = "#{@@gfw_url}/vocabulary"
+    
+    def self.read_vocabularies(dataset_id)
+      request = HTTParty.get(
+        "#{@@gfw_url}/dataset/#{dataset_id}/vocabulary",
+        :headers => {
+          "Content-Type" => "application/json",
+          "Authorization" => "Bearer #{}"
+        },
+        format: :json
+      )
+      puts("VOCAB REQUEST: #{request}")
+      return request
     end
   end
 end
+    

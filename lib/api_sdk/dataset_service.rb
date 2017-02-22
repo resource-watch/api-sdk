@@ -33,7 +33,7 @@ module APISdk
 
     def self.read(dataset_id)
       request = HTTParty.get(
-        "#{@@dataset_url}/#{dataset_id}?includes=vocabulary"
+        "#{@@dataset_url}/#{dataset_id}"
       )
       puts("REQUEST: #{request}")
       return request
@@ -51,7 +51,7 @@ module APISdk
       puts ("REQUEST: #{request}")
       return request
     end
-
+    
     def self.delete(dataset_id, token)
       puts "TOKEN: #{token}"
       request = HTTParty.delete(

@@ -194,7 +194,7 @@ module APISdk
     # Get a dataset from the API
     def self.find(dataset_id)
       response = DatasetService.read(dataset_id)
-      puts "RESPONSE: #{response}"
+      puts "Dataset response: #{response}"
       dataset = Dataset.new(
         name:           response["data"]["attributes"]["name"],
         connector_type: response["data"]["attributes"]["connectorType"],
@@ -205,11 +205,26 @@ module APISdk
         legend:         response["data"]["attributes"]["legend"],
         data:           response["data"]["attributes"]["data"],
         table_name:     response["data"]["attributes"]["tableName"],
-        data_overwrite: response["data"]["attributes"]["dataOverwrite"],
-        vocabularies:   response["data"]["attributes"]["vocabularies"]
+        data_overwrite: response["data"]["attributes"]["dataOverwrite"]
       )
 
       dataset.id = response["data"]["id"]
+
+      # Gets all vocabularies for this dataset
+      vocab_response = VocabularyService.read_vocabularies(dataset.id)
+      puts "VOCAB RESPONSE: #{vocab_response}"
+      vocabularies_hash = vocab_response["data"]
+      puts "VOCAB HASH: #{vocabularies_hash}"
+      puts "Creating vocabularies for dataset #{dataset.id}"
+      vocabularies_array = vocabularies_hash.map do |voc|
+        puts "Vocabulary: #{voc}"
+        puts "Vocabulary name: #{voc["attributes"]["name"]}"
+        Vocabulary.new(
+          name: voc["attributes"]["name"],
+          tags: voc["attributes"]["tags"]
+        )
+      end
+      dataset.vocabularies = vocabularies_array
       dataset.persisted = true
       return dataset
     end
@@ -288,6 +303,13 @@ module APISdk
           :not_presence,
           message: "Data attribute not supported for this provider"
         )
+      end
+    end
+
+    def validate_table_name
+      case @provider
+      when "gee"
+       nil 
       end
     end
   end
