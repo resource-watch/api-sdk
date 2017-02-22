@@ -12,20 +12,9 @@ module APISdk
                              :tags
 
     changeable_attr_accessor :name,
-                             :tags,
-                             :description,
-                             :source,
-                             :source_url,
-                             :authors,
-                             :query_url,
-                             :widget_config,
-                             :templete,
-                             :default,
-                             :published,
-                             :verified
+                             :tags
 
-    attr_accessor            :id,
-                             :dataset
+    attr_accessor            :id
     
     validates :name, presence: true
     validate :validate_tags

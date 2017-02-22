@@ -217,16 +217,20 @@ module APISdk
       puts "VOCAB HASH: #{vocabularies_hash}"
       puts "Creating vocabularies for dataset #{dataset.id}"
       vocabularies_array = vocabularies_hash.map do |voc|
-        puts "Vocabulary: #{voc}"
-        puts "Vocabulary name: #{voc["attributes"]["name"]}"
         Vocabulary.new(
-          name: voc["attributes"]["name"],
-          tags: voc["attributes"]["tags"]
+          id:            voc["id"],
+          name:          voc["attributes"]["name"],
+          tags:          voc["attributes"]["tags"]
         )
       end
       dataset.vocabularies = vocabularies_array
       dataset.persisted = true
-      return dataset
+      return dataset.clear!
+    end
+
+    def clear!
+      clear_changes_information
+      return self
     end
 
     def update
