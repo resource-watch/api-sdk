@@ -185,7 +185,10 @@ module APISdk
       self.data               = response["data"]["attributes"]["data"]
       self.table_name         = response["data"]["attributes"]["tableName"]
       self.data_overwrite     = response["data"]["attributes"]["dataOverwrite"]
-      self.vocabularies       = response["data"]["attributes"]["vocabulary"]
+
+      # if response["data"]["attributes"]["dataOverwrite"]
+
+
       @persisted              = true
       clear_changes_information
       return self

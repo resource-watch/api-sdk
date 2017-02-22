@@ -49,7 +49,21 @@ module APISdk
       restore_attributes
     end
 
+    # Finds a vocabulary by its id. TODO
     def self.find(vocabulary_id)
+    end
+
+    # Updates a vocabulary
+    def self.update(vocabulary_id, params, token)
+      puts "PARAMS: #{params}"
+      puts "TOKEN: #{token}"
+      request = HTTParty.put(
+        "#{@@vocabulary_url}/#{vocabulary_id}",
+        :headers => {"Authorization" => "Bearer #{token}"},
+        :body => { "vocabulary" => params }
+      )
+      puts ("REQUEST: #{request}")
+      return request
     end
 
     private
