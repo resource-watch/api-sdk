@@ -1,7 +1,7 @@
 module APISdk
   class DatasetService
     # gfw_url will appropriately pull from ENV
-    @@gfw_url     = "http://staging-api.globalforestwatch.org"
+    @@gfw_url     = ENV["GFW_API_URL"]
     @@dataset_url = "#{@@gfw_url}/dataset"
     
     def self.create(attrs, token)

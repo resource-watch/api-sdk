@@ -19,6 +19,8 @@ require 'httparty'
 require 'api_sdk/attr_changeable_methods'
 # And the actual API interfacing will be living in its own class
 require 'api_sdk/vocabulary'
+require 'api_sdk/widget'
+require 'api_sdk/metadata'
 # Needed for change-tracking in hash values
 require 'api_sdk/dataset_service'
 # Needed for change-tracking in hash values
@@ -70,6 +72,7 @@ module APISdk
     #  data_overwrite
     #  vocabularies
     #
+    
     # Defining attribute methods in the usual Rails way, but
     # changeable_attr_accessor
     define_attribute_methods :name,
@@ -88,7 +91,8 @@ module APISdk
                              # dataset attributes. But also, for
                              # some things that are not attributes.
                              # Like the token.
-                             :token
+                             :token,
+                             :metadata
 
     # But we'll only declare dataset attributes as changeable
     changeable_attr_accessor :name,
@@ -105,10 +109,12 @@ module APISdk
                              :vocabularies
 
 
-    # Some of the stuff is not supposed to be changed by the user.
+    # Some of the stuff is not supposed to be changed by the user, so
+    # we are not to track its dirty state
     attr_accessor            :persisted,
                              :token,
-                             :id
+                             :id,
+                             :metadata
 
     # Validations: TODO
     validates :name,           presence: true
@@ -167,6 +173,7 @@ module APISdk
     # Registers a dataset
     # Ugly function, has to be refactored
     def create
+      # Creation of the dataset proper
       response = DatasetService.create(self.attributes, self.token)
       puts "RESPONSE: #{response}"
       @id                 = response["data"]["id"]
@@ -187,6 +194,17 @@ module APISdk
       self.data_overwrite     = response["data"]["attributes"]["dataOverwrite"]
       self.vocabularies       = response["data"]["attributes"]["vocabulary"]
       @persisted              = true
+      # Metadata creation
+
+      puts "self.id: #{self.id}"
+      puts "@id: #{@id}"
+
+      if not self.metadata.blank?
+        puts "Processing metadata"
+        MetadataService.update_or_create(self.metadata, self.token, "dataset", self.id)
+      else
+        puts "No metadata"
+      end
       clear_changes_information
       return self
     end
