@@ -35,12 +35,8 @@ module APISdk
           dataset["data"] = attrs[:data] if attrs[:data]
           dataset["tableName"] = attrs[:table_name] if attrs[:table_name]
           dataset["dataOverwrite"] = attrs[:data_overwrite] if attrs[:data_overwrite]
-
-          
-          dataset["vocabularies"] =   if attrs[:vocabularies]
         end
       }.to_json
-
       puts "JSON BODY: #{body}"
       
       request = HTTParty.post(
