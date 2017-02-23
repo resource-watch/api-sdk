@@ -49,25 +49,39 @@ module APISdk
   class MetadataService
     def self.update_or_create(metadata, token, *ids)
       endpoint = ids.unshift(ENV["GFW_API_URL"]).push("metadata").join("/")
-      puts "ENDPOINT: #{endpoint}"
+      puts "ENDPOINT: ".red + "#{endpoint}"
 
+      metadata = Array(metadata)
+
+      ids = metadata.map do |md| {application: md.application, language: md.language } end
+      puts("METADATA ARRAY: ".red + "#{metadata}")
+      puts ("EXISTING METADATA IDS: ".red + "#{ids}")
       # Checks if the metadata for the language and application exists
-      request = HTTParty.get(
+      metadata_request = HTTParty.get(
         endpoint << "?page[number]=1&page[size]=10000",
         :headers => {
           "Authorization" => "Bearer #{token}",
           "Content-Type"  => "application/json"
         }
       )
-      puts ("METADATA REQUEST: #{request}")
-      parsed_request = JSON.parse(request.parsed_response)
-      puts ("PARSED REQUEST: #{parsed_request}")
+      puts ("METADATA REQUEST: ".red + "#{metadata_request}")
+      parsed_request = JSON.parse(metadata_request.parsed_response)
+      puts ("PARSED REQUEST: ".red + "#{parsed_request}")
       existing_datasets = parsed_request["data"].map do |md|
         {application: md["attributes"]["application"], language: md["attributes"]["language"]}
       end
-      puts("Existing datasets: #{existing_datasets}")
-      puts "let's see"
-      return request
+      puts("EXISTING DATASETS: ".red + "#{existing_datasets}")
+      metadata_set_union =
+        ids.map {|id| downcase_hash_values id} and existing_datasets.map {|id| downcase_hash_values id}
+      puts("METADATA SET UNION: ".red + "#{metadata_set_union}")
+      return metadata_request
+    end
+
+    private
+    # To find set union with downcase values
+    # h2.map {|h| downcase_hash_values h } - h1.map{|h| downcase_hash_values h}
+    def self.downcase_hash_values(h)
+      Hash[h.map{|k,v| v.class == Array ? [k,v.map{|r| downcase_hash_values r}.to_a] : [k,v.downcase]}]
     end
   end
 end

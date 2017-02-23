@@ -24,7 +24,8 @@ require 'api_sdk/metadata'
 # Needed for change-tracking in hash values
 require 'api_sdk/dataset_service'
 # Needed for change-tracking in hash values
-
+require 'colorize'
+# Color in puts. To be replaced with a proper logger
 
 module APISdk
   # Many years later, as he faced the firing squad, Colonel
@@ -33,24 +34,18 @@ module APISdk
   class Dataset
     # Introspections, conversions, translations and validations
     include ActiveModel::Model
-
     # Track dirty objects
     include ActiveModel::Dirty
-
     # Provides support for define_model_callbacks
     # to change persisted state on update, etc.
     extend ActiveModel::Callbacks
-
     # to_key, to_param
     include ActiveModel::Conversion
-
     # AttributeMethods adds support for my_dataset.attributes
     include ActiveModel::AttributeMethods
-
     # Serializations allow us to convert the object to serializable hashes:
     # a = APISdk::Dataset.new(...); a.serializable_hash
     include ActiveModel::Serialization
-
     # to_json and as_json methodsOB
     include ActiveModel::Serializers::JSON
 
@@ -58,7 +53,7 @@ module APISdk
     @@connector_types     = %w(document json rest)
     @@connector_providers = %w(csv rwjson cartodb featureservice)
 
-    # FIELDS:
+    # DATASET FIELDS:
     #  name
     #  connector_type
     #  provider
@@ -74,7 +69,8 @@ module APISdk
     #
     
     # Defining attribute methods in the usual Rails way, but
-    # changeable_attr_accessor
+    # changeable_attr_accessor. This allows to add prefixes
+    # to the attributes
     define_attribute_methods :name,
                              :connector_type,
                              :provider,
@@ -89,12 +85,13 @@ module APISdk
                              :vocabularies,
                              # We want to define accessors for all
                              # dataset attributes. But also, for
-                             # some things that are not attributes.
-                             # Like the token.
+                             # some things that are not dataset
+                             # attributes proper, like the tokeb
+                             # and relations
                              :token,
                              :metadata
 
-    # But we'll only declare dataset attributes as changeable
+    # Declaring getter and setters with state change tracking
     changeable_attr_accessor :name,
                              :connector_type,
                              :provider,
@@ -192,22 +189,17 @@ module APISdk
       self.data               = response["data"]["attributes"]["data"]
       self.table_name         = response["data"]["attributes"]["tableName"]
       self.data_overwrite     = response["data"]["attributes"]["dataOverwrite"]
-
-      # if response["data"]["attributes"]["dataOverwrite"]
-
-
-      @persisted              = true
+      
       # Metadata creation
-
-      puts "self.id: #{self.id}"
-      puts "@id: #{@id}"
-
+      puts "METADATA CREATION"
       if not self.metadata.blank?
         puts "Processing metadata"
         MetadataService.update_or_create(self.metadata, self.token, "dataset", self.id)
       else
         puts "No metadata"
       end
+
+      @persisted = true
       clear_changes_information
       return self
     end
