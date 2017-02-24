@@ -8,8 +8,34 @@ module APISdk
     include ActiveModel::Serialization
     include ActiveModel::Serializers::JSON
 
+    # METADATA FIELDS:
+    #   application: <string>
+    #   language: <string>
+    #   name: <string>
+    #   description: <string>
+    #   source: <string>
+    #   citation: <string>
+    #   license: <string>
+    #   info: <hash>
+    #   units: <hash>
+    
     define_attribute_methods :application,
-                             :language
+                             :language,
+                             :name,
+                             :description,
+                             :source,
+                             :citation,
+                             :license,
+                             :info,
+                             :units
+
+    changeable_attr_accessor :name,
+                             :description,
+                             :source,
+                             :citation,
+                             :license,
+                             :info,
+                             :units
 
     attr_accessor :application,
                   :language
@@ -31,7 +57,14 @@ module APISdk
     def attributes
       {
         application: @application,
-        language:    @language
+        language:    @language,
+        name:        @name,
+        description: @description,
+        source:      @source,
+        citation:    @citation,
+        license:     @license,
+        info:        @info,
+        units:       @units
       }
     end
 
@@ -48,14 +81,15 @@ module APISdk
 
   class MetadataService
     def self.update_or_create(metadata, token, *ids)
+      # The endpoint is constructed from the parameters:
+      # An example call to get dataset metadata is:
+      # MetadataService.update_or_create(self.metadata, self.token, "dataset", self.id)
       endpoint = ids.unshift(ENV["GFW_API_URL"]).push("metadata").join("/")
       puts "ENDPOINT: ".red + "#{endpoint}"
-
+      # And metadata is put into an array if not already one
       metadata = Array(metadata)
-
-      ids = metadata.map do |md| {application: md.application, language: md.language } end
-      puts("METADATA ARRAY: ".red + "#{metadata}")
-      puts ("EXISTING METADATA IDS: ".red + "#{ids}")
+      local_metadata = metadata.map do |md| {application: md.application, language: md.language } end
+      puts ("LOCAL METADATA: ".red + "#{local_metadata}")
       # Checks if the metadata for the language and application exists
       metadata_request = HTTParty.get(
         endpoint << "?page[number]=1&page[size]=10000",
@@ -64,15 +98,14 @@ module APISdk
           "Content-Type"  => "application/json"
         }
       )
-      puts ("METADATA REQUEST: ".red + "#{metadata_request}")
       parsed_request = JSON.parse(metadata_request.parsed_response)
       puts ("PARSED REQUEST: ".red + "#{parsed_request}")
-      existing_datasets = parsed_request["data"].map do |md|
+      remote_metadata = parsed_request["data"].map do |md|
         {application: md["attributes"]["application"], language: md["attributes"]["language"]}
       end
-      puts("EXISTING DATASETS: ".red + "#{existing_datasets}")
+      puts("REMOTE METADATA: ".red + "#{remote_metadata}")
       metadata_set_union =
-        ids.map {|id| downcase_hash_values id} and existing_datasets.map {|id| downcase_hash_values id}
+        local_metadata.map {|id| downcase_hash_values id} and remote_metadata.map {|id| downcase_hash_values id}
       puts("METADATA SET UNION: ".red + "#{metadata_set_union}")
       return metadata_request
     end
