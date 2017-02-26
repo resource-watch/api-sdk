@@ -77,6 +77,14 @@ module APISdk
     def rollback!
       restore_attributes
     end
+
+    def create(token, endpoint)
+      response = MetadataService.create(self.attributes, token, endpoint)
+    end
+    
+    def update(token, endpoint)
+      response = MetadataService.update(self.attributes, token, endpoint)
+    end
   end
 
   class MetadataService
@@ -91,8 +99,9 @@ module APISdk
       local_metadata = metadata.map do |md| {application: md.application, language: md.language } end
       puts ("LOCAL METADATA: ".red + "#{local_metadata}")
       # Checks if the metadata for the language and application exists
+      endpoint_list = endpoint.dup
       metadata_request = HTTParty.get(
-        endpoint << "?page[number]=1&page[size]=10000",
+        endpoint_list << "?page[number]=1&page[size]=10000",
         :headers => {
           "Authorization" => "Bearer #{token}",
           "Content-Type"  => "application/json"
@@ -104,10 +113,31 @@ module APISdk
         {application: md["attributes"]["application"], language: md["attributes"]["language"]}
       end
       puts("REMOTE METADATA: ".red + "#{remote_metadata}")
-      metadata_set_union =
-        local_metadata.map {|id| downcase_hash_values id} and remote_metadata.map {|id| downcase_hash_values id}
-      puts("METADATA SET UNION: ".red + "#{metadata_set_union}")
+      local_ids = local_metadata.map {|id| downcase_hash_values id}
+      remote_ids = remote_metadata.map {|id| downcase_hash_values id}
+
+      only_local_ids = local_ids - remote_ids
+      puts("ONLY IN LOCAL: ".red + "#{only_local_ids}")
+      # [{"a" => "b"}, {"a" => "c"}].any? {|h| h["a"] == "b"}
+      orders = metadata.map do |md|
+        puts [md.application, md.language]
+        if only_local_ids.any? {|h| h[:application] == md.application.downcase and h[:language] == md.language.downcase}
+          md.create(token, endpoint)
+        else
+          md.update(token, endpoint)
+        end
+      end
+
+      
       return metadata_request
+    end
+
+    def self.create(attributes, token, endpoint)
+      puts "Creating metadata #{self} at endpoint #{endpoint}"
+    end
+
+    def self.update(attributes, token, endpoint)
+      puts "Updating metadata #{self} at endpoint #{endpoint}"
     end
 
     private
