@@ -38,7 +38,8 @@ module APISdk
                              :units
 
     attr_accessor :application,
-                  :language
+                  :language,
+                  :id
 
 
     def initialize(data = {})
@@ -85,9 +86,46 @@ module APISdk
     def update(token, endpoint)
       response = MetadataService.update(self.attributes, token, endpoint)
     end
+
+    def self.find(*route)
+      response = MetadataService.read(*route)
+      puts "Dataset metadata response: ".red + "#{response}"
+      parsed_response = JSON.parse(response.parsed_response)
+      puts "Dataset metadata parsed response: ".red + "#{parsed_response}"
+      if parsed_response["data"].any?
+        data = parsed_response["data"]
+        puts "METADATA DATA: ".red + "#{data}"
+        metadata = data.map do |attrs|
+          md = Metadata.new(
+            application: attrs["attributes"]["application"],
+            language: attrs["attributes"]["language"]
+          )
+          md.id = attrs["id"]
+          md
+        end
+        puts "METADATA OBJECTS: ".red + "#{metadata}"
+        return metadata
+      else
+        puts "NO METADATA AT ENDPOINT".yellow
+        return nil
+      end
+    end
   end
 
   class MetadataService
+    def self.read(*route)
+      endpoint = route.unshift(ENV["GFW_API_URL"]).push("metadata").join("/")
+      puts "FINDING DATASET METADATA AT ENDPOINT: ".red + "#{endpoint}"
+      metadata_request = HTTParty.get(
+        endpoint << "?page[number]=1&page[size]=10000",
+        :headers => {
+          "Content-Type"  => "application/json"
+        }
+      )
+      puts "METADATA REQUEST: ".red + "#{metadata_request}"
+      return metadata_request
+    end
+    
     def self.update_or_create(metadata, token, *ids)
       # The endpoint is constructed from the parameters:
       # An example call to get dataset metadata is:

@@ -238,6 +238,12 @@ module APISdk
       end
       dataset.vocabularies = vocabularies_array
       dataset.persisted = true
+
+      # Attaching its metadata
+      puts "GETTING DATASET METADATA".red
+
+      dataset.metadata = Metadata.find("dataset", dataset_id)
+      
       return dataset.clear!
     end
 
