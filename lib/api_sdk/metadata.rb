@@ -18,7 +18,7 @@ module APISdk
     #   license: <string>
     #   info: <hash>
     #   units: <hash>
-    
+
     define_attribute_methods :application,
                              :language,
                              :name,
@@ -82,9 +82,16 @@ module APISdk
     def create(token, endpoint)
       response = MetadataService.create(self.attributes, token, endpoint)
     end
-    
+
     def update(token, endpoint)
-      response = MetadataService.update(self.attributes, token, endpoint)
+      attrs_without_ids = self.attributes.compact
+      changed_parameters = self.changes.map {|k,v| {k =>  v.last}}.reduce(:merge)
+      attributes = [
+        changed_parameters,
+        {application: self.application},
+        {language: self.language}
+      ].reduce(:merge)
+      response = MetadataService.update(attributes, token, endpoint)
     end
 
     def self.find(*route)
@@ -98,7 +105,14 @@ module APISdk
         metadata = data.map do |attrs|
           md = Metadata.new(
             application: attrs["attributes"]["application"],
-            language: attrs["attributes"]["language"]
+            language: attrs["attributes"]["language"],
+            name: attrs["attributes"]["name"],
+            description: attrs["attributes"]["description"],
+            source: attrs["attributes"]["source"],
+            citation: attrs["attributes"]["citation"],
+            license: attrs["attributes"]["license"],
+            info: attrs["attributes"]["info"],
+            units: attrs["attributes"]["units"]
           )
           md.id = attrs["id"]
           md
@@ -116,8 +130,9 @@ module APISdk
     def self.read(*route)
       endpoint = route.unshift(ENV["GFW_API_URL"]).push("metadata").join("/")
       puts "FINDING DATASET METADATA AT ENDPOINT: ".red + "#{endpoint}"
+      endpoint_no_pagination = endpoint.dup << "?page[number]=1&page[size]=10000"
       metadata_request = HTTParty.get(
-        endpoint << "?page[number]=1&page[size]=10000",
+        endpoint_no_pagination,
         :headers => {
           "Content-Type"  => "application/json"
         }
@@ -125,60 +140,103 @@ module APISdk
       puts "METADATA REQUEST: ".red + "#{metadata_request}"
       return metadata_request
     end
-    
+
     def self.update_or_create(metadata, token, *ids)
       # The endpoint is constructed from the parameters:
       # An example call to get dataset metadata is:
       # MetadataService.update_or_create(self.metadata, self.token, "dataset", self.id)
       endpoint = ids.unshift(ENV["GFW_API_URL"]).push("metadata").join("/")
-      puts "ENDPOINT: ".red + "#{endpoint}"
+      endpoint_no_pagination = endpoint.dup << "?page[number]=1&page[size]=10000"
+      puts "Checking metadata at endpoint: ".red + "#{endpoint_no_pagination}"
       # And metadata is put into an array if not already one
       metadata = Array(metadata)
-      local_metadata = metadata.map do |md| {application: md.application, language: md.language } end
-      puts ("LOCAL METADATA: ".red + "#{local_metadata}")
+      local_metadata = metadata.map do |md|
+        {application: md.application, language: md.language }
+      end
+      puts ("Local keys: ".red + "#{local_metadata}")
       # Checks if the metadata for the language and application exists
-      endpoint_list = endpoint.dup
       metadata_request = HTTParty.get(
-        endpoint_list << "?page[number]=1&page[size]=10000",
+        endpoint_no_pagination,
         :headers => {
           "Authorization" => "Bearer #{token}",
           "Content-Type"  => "application/json"
         }
       )
       parsed_request = JSON.parse(metadata_request.parsed_response)
-      puts ("PARSED REQUEST: ".red + "#{parsed_request}")
+      puts ("Parsed request: ".red + "#{parsed_request}")
       remote_metadata = parsed_request["data"].map do |md|
-        {application: md["attributes"]["application"], language: md["attributes"]["language"]}
+        {
+          application: md["attributes"]["application"],
+          language: md["attributes"]["language"]
+        }
       end
-      puts("REMOTE METADATA: ".red + "#{remote_metadata}")
+      puts("Remote metadata keys: ".red + "#{remote_metadata}")
       local_ids = local_metadata.map {|id| downcase_hash_values id}
       remote_ids = remote_metadata.map {|id| downcase_hash_values id}
-
       only_local_ids = local_ids - remote_ids
-      puts("ONLY IN LOCAL: ".red + "#{only_local_ids}")
+      puts("Local only metadata keys: ".red + "#{only_local_ids}")
       # [{"a" => "b"}, {"a" => "c"}].any? {|h| h["a"] == "b"}
-      orders = metadata.map do |md|
-        puts [md.application, md.language]
-        if only_local_ids.any? {|h| h[:application] == md.application.downcase and h[:language] == md.language.downcase}
+      puts "Creating metadata".red
+
+      metadata.each do |md|
+        keys = {
+          application: md.application.downcase,
+          language:    md.language.downcase
+        }
+        if only_local_ids.include? keys
+          puts "Creating metadata with application #{md.application} and language #{md.language} \n at endpoint #{endpoint}"
           md.create(token, endpoint)
+        elsif remote_ids.include? keys
+          puts "Looking for changes in metadata with application #{md.application} and language #{md.language} \n at endpoint #{endpoint}"
+          if md.changes.any?
+            puts "-- Changes found. Updating metadata."
+            md.update(token, endpoint)
+          else
+            puts "-- No changes found. Skipping."
+          end
         else
-          md.update(token, endpoint)
+          puts "?"
         end
       end
-
-      
-      return metadata_request
+      return nil
     end
-
+    
     def self.create(attributes, token, endpoint)
-      puts "Creating metadata #{self} at endpoint #{endpoint}"
+      attributes_json = attributes.compact.to_json
+      puts "ATTRIBUTES JSON: ".red + "#{attributes_json}"
+      request = HTTParty.post(
+        endpoint,
+        :headers => {
+          "Content-Type" => "application/json",
+          "Authorization" => "Bearer #{token}"
+        },
+        :body => attributes_json,
+        :debug_output => $stdout
+      )
+
+      puts "REQUEST: " + "#{request}"
+      return request
     end
 
     def self.update(attributes, token, endpoint)
-      puts "Updating metadata #{self} at endpoint #{endpoint}"
+      attributes_json = attributes.to_json
+      puts "ATTRIBUTES JSON: ".red + "#{attributes_json}"
+      request = HTTParty.patch(
+        endpoint,
+        :headers => {
+          "Content-Type" => "application/json",
+          "Authorization" => "Bearer #{token}"
+        },
+        :body => attributes_json,
+        :debug_output => $stdout
+      )
+      
+      puts "REQUEST: " + "#{request}"
+      return request
     end
 
     private
+
     # To find set union with downcase values
     # h2.map {|h| downcase_hash_values h } - h1.map{|h| downcase_hash_values h}
     def self.downcase_hash_values(h)

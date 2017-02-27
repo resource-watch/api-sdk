@@ -260,26 +260,41 @@ module APISdk
     end
 
     def update
-      changed_parameters = self.changes.map{|k,v| {k =>  v.last}}.reduce(:merge)
-      response = DatasetService.update(self.id, changed_parameters, self.token)
-      puts("RESPONSE: #{response}")
+      if changes.any?
+        changed_parameters = self.changes.map{|k,v| {k =>  v.last}}.reduce(:merge)
+        response = DatasetService.update(self.id, changed_parameters, self.token)
+        puts("RESPONSE: #{response}")
+        
+        @id                 = response["data"]["id"]
+        self.name           = response["data"]["attributes"]["name"]
+        self.connector_type = response["data"]["attributes"]["connectorType"]
+        self.provider       = response["data"]["attributes"]["provider"]
+        self.connector_url  = response["data"]["attributes"]["connectorUrl"]
+        self.application    = response["data"]["attributes"]["application"]
+        self.subtitle       = response["data"]["attributes"]["subtitle"]
+        self.data_path      = response["data"]["attributes"]["dataPath"]
+        self.legend         = response["data"]["attributes"]["legend"]
+        self.data           = response["data"]["attributes"]["data"]
+        self.table_name     = response["data"]["attributes"]["tableName"]
+        self.data_overwrite = response["data"]["attributes"]["dataOverwrite"]
+        self.vocabularies   = response["data"]["attributes"]["vocabularies"]
+        @persisted          = true
+        
+        clear_changes_information
+      
+      else
+        puts "No changes to the dataset proper. Skipping.".red
+      end
 
-      @id                 = response["data"]["id"]
-      self.name           = response["data"]["attributes"]["name"]
-      self.connector_type = response["data"]["attributes"]["connectorType"]
-      self.provider       = response["data"]["attributes"]["provider"]
-      self.connector_url  = response["data"]["attributes"]["connectorUrl"]
-      self.application    = response["data"]["attributes"]["application"]
-      self.subtitle       = response["data"]["attributes"]["subtitle"]
-      self.data_path      = response["data"]["attributes"]["dataPath"]
-      self.legend         = response["data"]["attributes"]["legend"]
-      self.data           = response["data"]["attributes"]["data"]
-      self.table_name     = response["data"]["attributes"]["tableName"]
-      self.data_overwrite = response["data"]["attributes"]["dataOverwrite"]
-      self.vocabularies   = response["data"]["attributes"]["vocabularies"]
-      @persisted          = true
-
-      clear_changes_information
+      # Metadata
+      if self.metadata.nil?
+        puts "No metadata. Skipping".red
+      else
+        metadata_array = Array(self.metadata)
+        MetadataService.update_or_create(metadata_array, self.token, "dataset", self.id)
+      end      
+      # Widgets
+      # Layers
       return self
     end
 
