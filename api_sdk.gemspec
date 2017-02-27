@@ -6,9 +6,15 @@ Gem::Specification.new do |s|
   s.description = "Not yet"
   s.authors     = ["Enrique Cornejo"]
   s.email       = 'enrique@cornejo.me'
-  s.files       = ["lib/api_sdk.rb", "lib/api_sdk/dataset_service.rb"]
+  s.files       = [
+    "lib/api_sdk.rb",
+    "lib/api_sdk/dataset_service.rb",
+    "lib/api_sdk/attr_changeable_methods.rb"
+  ]
   s.homepage    = 'https://www.vizzuality.com'
   s.add_runtime_dependency "activemodel"
   s.add_runtime_dependency "activerecord"
+  s.add_runtime_dependency "activesupport"
   s.add_runtime_dependency "httparty"
+  s.add_runtime_dependency "colorize"
 end

@@ -6,7 +6,7 @@ This gem provides an ActiveModel interface for connecting ruby applications with
 
 Build with `gem build api_sdk.gemspec` and install it with `gem install api_sdk-*.gem`. Then, just declare it in your Gemfile.
 
-To load the gem in a irb session type `bundle && bundle exec irb`. Then you just need to `require api_sdk`.
+To load the gem in a irb session type `bundle && bundle exec irb`. Then you just need to `require "api_sdk"`.
 
 Usage
 
@@ -87,5 +87,32 @@ It will again reflect its persisted state:
 > dataset.persisted?
 => true
 ```
+
+Add legends to csv datasets with a properly formatted object.
+
+```
+a.legend = {"lat"=>"latitude", "date"=>["ISO", "dates", "here"], "long"=>"longitude", "region"=>["regions", "here"], "country"=>["ESP"]}
+```															     
+Create a /de novo/ dataset:
+
+```
+a = APISdk::Dataset.new(
+  :name           => "Example dataset",
+  :connector_type => "document",
+  :provider       => "csv",
+  :application    => ["rw"],
+  :connector_url  => "",
+  :subtitle       => "subtitulo",
+  :legend         => {
+    "lat"           => "latitude",
+    "long"          => "longitude"
+  }
+)
+
+a.token = "A proper CT API JWT"
+a.create
+```
+
+
 
 TODO: refactoring, creating of _de novo_ datasets, destroying, adding fields
