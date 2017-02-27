@@ -77,7 +77,7 @@ module APISdk
       restore_attributes
     end
 
-    def self.find_for_endpoint(dataset_id)
+    def self.find_for_dataset(dataset_id)
       puts "FINDING WIDGETS FOR DATASET: ".red + "#{dataset_id}"
       widgets_request = WidgetService.read_at("dataset", dataset_id)
       widgets_data = widgets_request["data"]

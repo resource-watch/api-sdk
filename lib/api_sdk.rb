@@ -20,6 +20,7 @@ require 'api_sdk/attr_changeable_methods'
 # And the actual API interfacing will be living in its own class
 require 'api_sdk/vocabulary'
 require 'api_sdk/widget'
+require 'api_sdk/layer'
 require 'api_sdk/metadata'
 # Needed for change-tracking in hash values
 require 'api_sdk/dataset_service'
@@ -90,7 +91,8 @@ module APISdk
                              # and relations
                              :token,
                              :metadata,
-                             :widgets
+                             :widgets,
+                             :layers
 
     # Declaring getter and setters with state change tracking
     changeable_attr_accessor :name,
@@ -113,7 +115,8 @@ module APISdk
                              :token,
                              :id,
                              :metadata,
-                             :widgets
+                             :widgets,
+                             :layers
 
     # Validations: TODO
     validates :name,           presence: true
@@ -243,9 +246,11 @@ module APISdk
       puts "GETTING DATASET METADATA FOR DATASET: ".red + "#{dataset.id}"
       dataset.metadata = Metadata.find("dataset", dataset_id)
 
-
       puts "GETTING WIDGETS FOR DATASET: ".red + "#{dataset.id}"
-      dataset.widgets = Widget.find_for_endpoint(dataset_id)
+      dataset.widgets = Widget.find_for_dataset(dataset_id)
+
+      puts "GETTING LAYERS FOR DATASET: ".red + "#{dataset.id}"
+      dataset.layers = Layer.find_for_dataset(dataset_id)
       return dataset.clear!
     end
 
