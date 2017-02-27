@@ -8,9 +8,34 @@ module APISdk
     include ActiveModel::Serialization
     include ActiveModel::Serializers::JSON
 
-    define_attribute_methods :name
+    define_attribute_methods :name,
+                             :description,
+                             :source_url,
+                             :authors,
+                             :query_url,
+                             :widget_config,
+                             :default,
+                             :template,
+                             :published,
+                             :verified,
+                             # Other fields,
+                             :metadata
 
-    changeable_attr_accessor :name
+    changeable_attr_accessor :name,
+                             :description,
+                             :source_url,
+                             :authors,
+                             :query_url,
+                             :widget_config,
+                             :default,
+                             :template,
+                             :published,
+                             :verified
+
+    attr_accessor            :persisted,
+                             :token,
+                             :id,
+                             :metadata
 
     validates :name, presence: true
 
@@ -30,7 +55,16 @@ module APISdk
 
     def attributes
       {
-        name: @name
+        name:          @name,
+        description:   @descripion,
+        source_url:    @source_url,
+        authors:       @authors,
+        query_url:     @query_url,
+        widget_config: @widget_config,
+        default:       @default,
+        template:      @template,
+        published:     @published,
+        verified:      @verified
       }
     end
 
