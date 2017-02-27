@@ -57,7 +57,7 @@ module APISdk
       request = HTTParty.get(
         "#{@@dataset_url}/#{dataset_id}?include=vocabulary"
       )
-      puts("REQUEST: #{request}")
+      puts("DATASET REQUEST: ".red + "#{request}")
       return request
     end
 

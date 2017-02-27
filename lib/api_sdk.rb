@@ -89,7 +89,8 @@ module APISdk
                              # attributes proper, like the tokeb
                              # and relations
                              :token,
-                             :metadata
+                             :metadata,
+                             :widgets
 
     # Declaring getter and setters with state change tracking
     changeable_attr_accessor :name,
@@ -111,7 +112,8 @@ module APISdk
     attr_accessor            :persisted,
                              :token,
                              :id,
-                             :metadata
+                             :metadata,
+                             :widgets
 
     # Validations: TODO
     validates :name,           presence: true
@@ -224,9 +226,7 @@ module APISdk
       dataset.id = response["data"]["id"]
 
       # Gets all vocabularies for this dataset
-
-      puts "GETTING DATASET VOCABULARIES: ".red + " #{dataset.id}"
-      
+      puts "GETTING DATASET VOCABULARIES FOR DATASET: ".red + "#{dataset.id}"
       vocab_response = VocabularyService.read_vocabularies(dataset.id)
       vocabularies_hash = vocab_response["data"]
       vocabularies_array = vocabularies_hash.map do |voc|
@@ -240,9 +240,12 @@ module APISdk
       dataset.persisted = true
 
       # Attaching its metadata
-      puts "GETTING DATASET METADATA".red
+      puts "GETTING DATASET METADATA FOR DATASET: ".red + "#{dataset.id}"
       dataset.metadata = Metadata.find("dataset", dataset_id)
-      
+
+
+      puts "GETTING WIDGETS FOR DATASET: ".red + "#{dataset.id}"
+      dataset.widgets = Widget.find_for_endpoint(dataset_id)
       return dataset.clear!
     end
 
