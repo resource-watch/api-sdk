@@ -89,12 +89,12 @@ module APISdk
 
     def self.find(*route)
       response = MetadataService.read(*route)
-      puts "Dataset metadata response: ".red + "#{response}"
       parsed_response = JSON.parse(response.parsed_response)
-      puts "Dataset metadata parsed response: ".red + "#{parsed_response}"
+      puts "DATASET METADATA PARSED RESPONSE: ".red
+      puts "-- route: ".red + "#{route}"
+      puts "-- response: ".red + "#{parsed_response}"
       if parsed_response["data"].any?
         data = parsed_response["data"]
-        puts "METADATA DATA: ".red + "#{data}"
         metadata = data.map do |attrs|
           md = Metadata.new(
             application: attrs["attributes"]["application"],
@@ -103,7 +103,7 @@ module APISdk
           md.id = attrs["id"]
           md
         end
-        puts "METADATA OBJECTS: ".red + "#{metadata}"
+        puts "DATASET METADATA: ".red + "#{metadata}"
         return metadata
       else
         puts "NO METADATA AT ENDPOINT".yellow

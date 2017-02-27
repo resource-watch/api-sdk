@@ -224,11 +224,11 @@ module APISdk
       dataset.id = response["data"]["id"]
 
       # Gets all vocabularies for this dataset
+
+      puts "GETTING DATASET VOCABULARIES: ".red + " #{dataset.id}"
+      
       vocab_response = VocabularyService.read_vocabularies(dataset.id)
-      puts "VOCAB RESPONSE: #{vocab_response}"
       vocabularies_hash = vocab_response["data"]
-      puts "VOCAB HASH: #{vocabularies_hash}"
-      puts "Creating vocabularies for dataset #{dataset.id}"
       vocabularies_array = vocabularies_hash.map do |voc|
         Vocabulary.new(
           id:            voc["id"],

@@ -5,8 +5,8 @@ module APISdk
     @@dataset_url = "#{@@gfw_url}/dataset"
     
     def self.create(attrs, token)
-      puts "ATTRIBUTES: #{attrs}"
-      puts "TOKEN: #{token}"
+      puts "ATTRIBUTES: ".red + "#{attrs}"
+      puts "TOKEN: ".red + "#{token}"
 
       body = {
         # "dataset" => {
@@ -37,7 +37,7 @@ module APISdk
           dataset["dataOverwrite"] = attrs[:data_overwrite] if attrs[:data_overwrite]
         end
       }.to_json
-      puts "JSON BODY: #{body}"
+      puts "JSON BODY: ".red + "#{body}"
       
       request = HTTParty.post(
         @@dataset_url,
