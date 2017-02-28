@@ -1,10 +1,10 @@
-# Resource Watch Ruby SDK
+# Resource Watch API SDK
 
 This gem provides an ActiveModel interface for connecting ruby applications with the Resource Watch API.
 
-# Installation #
+## Usage
 
-Build with `gem build api_sdk.gemspec` and install it with `gem install api_sdk-*.gem`. Then, just declare it in your Gemfile.
+Build with `gem build rw_api_sdk.gemspec` and install it with `gem install api_sdk-*.gem`. Then, just declare it in your Gemfile.
 
 To load the gem in a irb session type `bundle && bundle exec irb`. Then you just need to `require "api_sdk"`.
 

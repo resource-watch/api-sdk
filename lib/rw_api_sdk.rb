@@ -16,14 +16,14 @@ require 'json'
 require 'httparty'
 # And some code modularization is in order
 # Some Rails magic is required.
-require 'api_sdk/attr_changeable_methods'
+require 'rw_api_sdk/attr_changeable_methods'
 # And the actual API interfacing will be living in its own class
-require 'api_sdk/vocabulary'
-require 'api_sdk/widget'
-require 'api_sdk/layer'
-require 'api_sdk/metadata'
+require 'rw_api_sdk/vocabulary'
+require 'rw_api_sdk/widget'
+require 'rw_api_sdk/layer'
+require 'rw_api_sdk/metadata'
 # Needed for change-tracking in hash values
-require 'api_sdk/dataset_service'
+require 'rw_api_sdk/dataset_service'
 # Needed for change-tracking in hash values
 require 'colorize'
 # Color in puts. To be replaced with a proper logger
