@@ -264,7 +264,6 @@ module APISdk
         changed_parameters = self.changes.map{|k,v| {k =>  v.last}}.reduce(:merge)
         response = DatasetService.update(self.id, changed_parameters, self.token)
         puts("RESPONSE: #{response}")
-        
         @id                 = response["data"]["id"]
         self.name           = response["data"]["attributes"]["name"]
         self.connector_type = response["data"]["attributes"]["connectorType"]
@@ -299,6 +298,14 @@ module APISdk
       else
         widgets_array = Array(self.widgets)
         puts "Checking #{widgets_array.length} widgets for changes".red
+        widgets_array.each do |wdgt|
+          if wdgt.changes.any?
+            puts "Found changed widget. Updating.".red
+            wdgt.update(self.token, "dataset", self.id, "widget", wdgt.id)
+          else
+            puts "Widget not changed. Skipping.".red
+          end
+        end
       end
       # Layers
       if self.layers.nil?
@@ -306,8 +313,14 @@ module APISdk
       else
         layers_array = Array(self.layers)
         puts "Checking #{layers_array.length} layers for changes".red
+        layers_array.each do |lyr|
+          if lyr.changes.any?
+            puts "Found changed layer. Updating.".red
+          else
+            puts "Layer not changed. Skipping.".red
+          end
+        end
       end
-      
       return self
     end
 
