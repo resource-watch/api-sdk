@@ -96,6 +96,8 @@ module APISdk
             default:             l["attributes"]["default"],
             application:         l["attributes"]["application"]
           )
+
+          lyr.id = l["id"]
           layers.append(lyr)
         end
       else
@@ -104,6 +106,13 @@ module APISdk
       end
       return layers
     end
+
+    def update(token, *route)
+      attrs = self.changes.compact.map {|k,v| {k =>  v.last}}.reduce(:merge)
+      puts "Changes are: ".red + "#{attrs}"
+      LayerService.update(attrs, token, route)
+    end
+
   end
 
   class LayerService
@@ -116,5 +125,19 @@ module APISdk
       puts "LAYERS REQUEST: ".red + "#{request}"
       return request.parsed_response
     end
+
+    def self.update(attributes, token, *route)
+      endpoint = route.unshift(ENV["GFW_API_URL"]).join("/")
+      request = HTTParty.patch(
+        endpoint,
+        :headers => {
+          "Authorization" => "Bearer #{token}",
+          "Content-Type" => "application/json"
+        },
+        :body => {"layer" => attributes}.to_json,
+        :debug_output => $stdout
+      )
+    end
+
   end
 end

@@ -292,6 +292,7 @@ module APISdk
         metadata_array = Array(self.metadata)
         MetadataService.update_or_create(metadata_array, self.token, "dataset", self.id)
       end      
+
       # Widgets
       if self.widgets.nil?
         puts "No widgets. Skipping".red
@@ -307,6 +308,7 @@ module APISdk
           end
         end
       end
+
       # Layers
       if self.layers.nil?
         puts "No layers. Skipping".red
@@ -316,6 +318,7 @@ module APISdk
         layers_array.each do |lyr|
           if lyr.changes.any?
             puts "Found changed layer. Updating.".red
+            lyr.update(self.token, "dataset", self.id, "layer", lyr.id)
           else
             puts "Layer not changed. Skipping.".red
           end
