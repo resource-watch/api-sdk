@@ -195,14 +195,46 @@ module APISdk
       self.table_name         = response["data"]["attributes"]["tableName"]
       self.data_overwrite     = response["data"]["attributes"]["dataOverwrite"]
       
-      # Metadata creation
-      puts "METADATA CREATION"
-      if not self.metadata.blank?
-        puts "Processing metadata"
-        MetadataService.update_or_create(self.metadata, self.token, "dataset", self.id)
+      # Metadata
+      if self.metadata.nil?
+        puts "No metadata. Skipping".red
       else
-        puts "No metadata"
+        metadata_array = Array(self.metadata)
+        MetadataService.update_or_create(metadata_array, self.token, "dataset", self.id)
+      end      
+
+      # Widgets
+      if self.widgets.nil?
+        puts "No widgets. Skipping".red
+      else
+        widgets_array = Array(self.widgets)
+        puts "Checking #{widgets_array.length} widgets for changes".red
+        widgets_array.each do |wdgt|
+          if wdgt.changes.any?
+            puts "Found changed widget. Updating.".red
+            wdgt.update(self.token, "dataset", self.id, "widget", wdgt.id)
+          else
+            puts "Widget not changed. Skipping.".red
+          end
+        end
       end
+
+      # Layers
+      if self.layers.nil?
+        puts "No layers. Skipping".red
+      else
+        layers_array = Array(self.layers)
+        puts "Checking #{layers_array.length} layers for changes".red
+        layers_array.each do |lyr|
+          if lyr.changes.any?
+            puts "Found changed layer. Updating.".red
+            lyr.update(self.token, "dataset", self.id, "layer", lyr.id)
+          else
+            puts "Layer not changed. Skipping.".red
+          end
+        end
+      end
+
 
       @persisted = true
       clear_changes_information
