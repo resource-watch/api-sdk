@@ -9,6 +9,7 @@ module APISdk
     include ActiveModel::Serializers::JSON
 
     define_attribute_methods :name,
+                             :application,
                              :description,
                              :source,
                              :source_url,
@@ -25,6 +26,7 @@ module APISdk
                              :metadata
 
     changeable_attr_accessor :name,
+                             :application,
                              :description,
                              :source,
                              :source_url,
@@ -61,6 +63,7 @@ module APISdk
     def attributes
       {
         name:          @name,
+        application:   @application,
         description:   @descripion,
         source_url:    @source_url,
         authors:       @authors,
@@ -91,6 +94,7 @@ module APISdk
         widgets_data.each do |w|
           wdgt = Widget.new(
             name:          w["attributes"]["name"],
+            application:   w["attributes"]["application"],
             description:   w["attributes"]["description"],
             source_url:    w["attributes"]["source_url"],
             authors:       w["attributes"]["authors"],
