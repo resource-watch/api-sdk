@@ -16,6 +16,8 @@ module APISdk
                              :application_config,
                              :static_image_config,
                              :iso,
+                             :provider,
+                             :default,
                              #
                              :metadata
 
@@ -26,7 +28,9 @@ module APISdk
                              :legend_config,
                              :application_config,
                              :static_image_config,
-                             :iso
+                             :iso,
+                             :provider,
+                             :default
 
     attr_accessor            :persisted,
                              :token,
@@ -51,14 +55,16 @@ module APISdk
 
     def attributes
       {
-        name:                 @name,
-        description:          @description,
-        application:          @application,
-        layer_config:         @layer_config,
-        legend_config:        @legend_config,
-        application_config:   @application_config,
-        static_image_config:  @static_image_config,
-        iso:                  @iso
+        name:                @name,
+        description:         @description,
+        application:         @application,
+        layer_config:        @layer_config,
+        legend_config:       @legend_config,
+        application_config:  @application_config,
+        static_image_config: @static_image_config,
+        iso:                 @iso,
+        provider:            @provider,
+        default:             @default,
       }
     end
 
@@ -77,14 +83,24 @@ module APISdk
       layers_data = layers_request["data"]
       layers = []
       if not layers_data.empty?
-        layers_data.each do |w|
+        layers_data.each do |l|
           lyr = Layer.new(
-            name:          w["attributes"]["name"]
+            name:                l["attributes"]["name"],
+            static_image_config: l["attributes"]["staticImageConfig"],
+            application_config:  l["attributes"]["applicationConfig"],
+            legend_config:       l["attributes"]["legendConfig"],
+            layer_config:        l["attributes"]["layerConfig"],
+            description:         l["attributes"]["description"],
+            iso:                 l["attributes"]["iso"],
+            provider:            l["attributes"]["provider"],
+            default:             l["attributes"]["default"],
+            application:         l["attributes"]["application"]
           )
           layers.append(lyr)
         end
       else
         puts "NO LAYERS FOR DATASET"
+        return nil
       end
       return layers
     end

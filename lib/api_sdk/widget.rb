@@ -10,6 +10,7 @@ module APISdk
 
     define_attribute_methods :name,
                              :description,
+                             :source,
                              :source_url,
                              :authors,
                              :query_url,
@@ -18,11 +19,14 @@ module APISdk
                              :template,
                              :published,
                              :verified,
+                             :template,
+                             :default,
                              # Other fields,
                              :metadata
 
     changeable_attr_accessor :name,
                              :description,
+                             :source,
                              :source_url,
                              :authors,
                              :query_url,
@@ -30,10 +34,11 @@ module APISdk
                              :default,
                              :template,
                              :published,
-                             :verified
+                             :verified,
+                             :template,
+                             :default
 
     attr_accessor            :persisted,
-                             :token,
                              :id,
                              :metadata
 
@@ -96,10 +101,12 @@ module APISdk
             published:     w["attributes"]["published"],
             verified:      w["attributes"]["verified"]
           )
+          wdgt.id = w["id"]
           widgets.append(wdgt)
         end
       else
         puts "NO WIDGETS FOR DATASET"
+        return nil
       end
       return widgets
     end
