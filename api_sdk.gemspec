@@ -1,6 +1,6 @@
 Gem::Specification.new do |s|
   s.name        = 'api_sdk'
-  s.version     = '0.0.213'
+  s.version     = '0.1.0'
   s.licenses    = ['MIT']
   s.summary     = "Interfaces a ruby applications to the Resource Watch api"
   s.description = "Not yet"
@@ -9,6 +9,10 @@ Gem::Specification.new do |s|
   s.files       = [
     "lib/api_sdk.rb",
     "lib/api_sdk/dataset_service.rb",
+    "lib/api_sdk/widget.rb",
+    "lib/api_sdk/layer.rb",
+    "lib/api_sdk/vocabulary.rb.rb",
+    "lib/api_sdk/metadata.rb",
     "lib/api_sdk/attr_changeable_methods.rb"
   ]
   s.homepage    = 'https://www.vizzuality.com'
