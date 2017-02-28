@@ -4,11 +4,7 @@ This gem provides an ActiveModel interface for connecting ruby applications with
 
 ## Usage
 
-Build with `gem build rw_api_sdk.gemspec` and install it with `gem install api_sdk-*.gem`. Then, just declare it in your Gemfile.
-
-To load the gem in a irb session type `bundle && bundle exec irb`. Then you just need to `require "api_sdk"`.
-
-Usage
+Add the line `gem 'rw_api_sdk', :git => 'git://github.com/resource-watch/api-sdk.git'` in your Gemfile and set the environment variable `GFW_API_URL' to the API URL you want to target (with no trailing slash!). You're all set.
 
 This gem exposes several classes in the module APISdk, corresponding to different Resource Watch API endpoints. Datasets are exposed as the APISdk::Dataset class. Right now, you can do several things with a Dataset &mdash;but only the mandatory fields are supported:
 
@@ -84,7 +80,7 @@ When you are done, you can update the object and persist it to the API
 It will again reflect its persisted state:
 
 ``` 
-> dataset.persisted?
+ dataset.persisted?
 => true
 ```
 
