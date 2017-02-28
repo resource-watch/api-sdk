@@ -208,14 +208,9 @@ module APISdk
         puts "No widgets. Skipping".red
       else
         widgets_array = Array(self.widgets)
-        puts "Checking #{widgets_array.length} widgets for changes".red
+        puts "Creating #{widgets_array.length} widgets".red
         widgets_array.each do |wdgt|
-          if wdgt.changes.any?
-            puts "Found changed widget. Updating.".red
-            wdgt.update(self.token, "dataset", self.id, "widget", wdgt.id)
-          else
-            puts "Widget not changed. Skipping.".red
-          end
+          wdgt.create(self.token, "dataset", self.id, "widget")
         end
       end
 

@@ -111,6 +111,12 @@ module APISdk
       return widgets
     end
 
+    def create(token, *route)
+      attrs = self.attributes
+      puts "Attributes are: ".red + "#{attrs}"
+      WidgetService.create(attrs, token, route)
+    end
+
     def update(token, *route)
       attrs = self.changes.compact.map {|k,v| {k =>  v.last}}.reduce(:merge)
       puts "Changes are: ".red + "#{attrs}"
@@ -138,6 +144,18 @@ module APISdk
           "Content-Type" => "application/json"
         },
         :body => {"widget" => attributes}.to_json,
+        :debug_output => $stdout
+      )
+    end
+    def self.create(attributes, token, *route)
+      endpoint = route.unshift(ENV["GFW_API_URL"]).join("/")
+      request = HTTParty.post(
+        endpoint,
+        :headers => {
+          "Authorization" => "Bearer #{token}",
+          "Content-Type" => "application/json"
+        },
+        :body => {"widget" => attributes.compact}.to_json,
         :debug_output => $stdout
       )
     end
