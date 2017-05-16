@@ -1,8 +1,8 @@
 # coding: utf-8
 #
-# TODO: validations
-#
-#
+# Many years later, as he faced the firing squad, Colonel
+# Aureliano Buendía was to remember that distant afternoon when
+# his father took him to discover Rails.
 #
 # I'm trying to offer some of the Rails interface
 # for its models, so we'll need active_record
@@ -17,7 +17,7 @@ require 'httparty'
 # And some code modularization is in order
 # Some Rails magic is required.
 require 'rw_api_sdk/attr_changeable_methods'
-# And the actual API interfacing will be living in its own class
+# And the actual API interfacing will be living in separate classes
 require 'rw_api_sdk/vocabulary'
 require 'rw_api_sdk/widget'
 require 'rw_api_sdk/layer'
@@ -29,9 +29,6 @@ require 'colorize'
 # Color in puts. To be replaced with a proper logger
 
 module APISdk
-  # Many years later, as he faced the firing squad, Colonel
-  # Aureliano Buendía was to remember that distant afternoon when
-  # his father took him to discover Rails.
   class Dataset
     # Introspections, conversions, translations and validations
     include ActiveModel::Model
