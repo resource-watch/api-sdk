@@ -27,7 +27,8 @@ module APISdk
                              :citation,
                              :license,
                              :info,
-                             :units
+                             :units,
+                             :application_properties
 
     changeable_attr_accessor :name,
                              :description,
@@ -35,7 +36,8 @@ module APISdk
                              :citation,
                              :license,
                              :info,
-                             :units
+                             :units,
+                             :application_properties
 
     attr_accessor :application,
                   :language,
@@ -57,15 +59,16 @@ module APISdk
 
     def attributes
       {
-        application: @application,
-        language:    @language,
-        name:        @name,
-        description: @description,
-        source:      @source,
-        citation:    @citation,
-        license:     @license,
-        info:        @info,
-        units:       @units
+        application:            @application,
+        language:               @language,
+        name:                   @name,
+        description:            @description,
+        source:                 @source,
+        citation:               @citation,
+        license:                @license,
+        info:                   @info,
+        units:                  @units,
+        application_properties: @application_properties
       }
     end
 
@@ -96,10 +99,6 @@ module APISdk
 
     def self.find(*route)
       response = MetadataService.read(*route)
-      puts "UNO".red
-      puts response.parsed_response
-      puts response.parsed_response.to_json
-      puts "DOS".red
       parsed_response = JSON.parse(response.parsed_response.to_json)
       puts "DATASET METADATA PARSED RESPONSE: ".red
       puts "-- route: ".red + "#{route}"
@@ -108,15 +107,16 @@ module APISdk
         data = parsed_response["data"]
         metadata = data.map do |attrs|
           md = Metadata.new(
-            application: attrs["attributes"]["application"],
-            language: attrs["attributes"]["language"],
-            name: attrs["attributes"]["name"],
-            description: attrs["attributes"]["description"],
-            source: attrs["attributes"]["source"],
-            citation: attrs["attributes"]["citation"],
-            license: attrs["attributes"]["license"],
-            info: attrs["attributes"]["info"],
-            units: attrs["attributes"]["units"]
+            application:            attrs["attributes"]["application"],
+            language:               attrs["attributes"]["language"],
+            name:                   attrs["attributes"]["name"],
+            description:            attrs["attributes"]["description"],
+            source:                 attrs["attributes"]["source"],
+            citation:               attrs["attributes"]["citation"],
+            license:                attrs["attributes"]["license"],
+            info:                   attrs["attributes"]["info"],
+            units:                  attrs["attributes"]["units"],
+            application_properties: attrs["attributes"]["applicationProperties"]
           )
           md.id = attrs["id"]
           md
