@@ -96,7 +96,11 @@ module APISdk
 
     def self.find(*route)
       response = MetadataService.read(*route)
-      parsed_response = JSON.parse(response.parsed_response)
+      puts "UNO".red
+      puts response.parsed_response
+      puts response.parsed_response.to_json
+      puts "DOS".red
+      parsed_response = JSON.parse(response.parsed_response.to_json)
       puts "DATASET METADATA PARSED RESPONSE: ".red
       puts "-- route: ".red + "#{route}"
       puts "-- response: ".red + "#{parsed_response}"
